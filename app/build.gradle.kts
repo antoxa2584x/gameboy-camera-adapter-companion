@@ -67,6 +67,7 @@ dependencies {
     implementation(libs.kpermissions)
     implementation(libs.kpermissions.rx3)
     implementation(libs.colorpicker.compose)
+    implementation(libs.androidx.compose.material3)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
     implementation(libs.usb.serial.for1.android)

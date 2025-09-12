@@ -14,7 +14,6 @@ import com.hoho.android.usbserial.driver.UsbSerialPort
 import com.hoho.android.usbserial.driver.UsbSerialProber
 import ua.retrogaming.gcac.helper.LedSerialClient
 import ua.retrogaming.gcac.helper.SerialHelper
-import ua.retrogaming.gcac.model.LedStatus
 import ua.retrogaming.gcac.prefs.DevicePrefs
 
 
@@ -82,12 +81,11 @@ class DiscoveryService(private val context: Context, private val serialHelper: S
 
         serialHelper.startListening(port)
 
-        val status =  LedSerialClient(port).loadLedStatus()
+        LedSerialClient(port).loadLedStatus()
+
         DevicePrefs.apply {
             deviceConnected = true
-            ledStatus = LedStatus(status.r, status.g, status.b, false)
         }
-
     }
 
     override fun onReceive(context: Context?, intent: Intent?) {
