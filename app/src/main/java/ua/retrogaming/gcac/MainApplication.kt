@@ -13,14 +13,17 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
 import org.koin.dsl.module
+import ua.retrogaming.gcac.helper.LedSerialClient
+import ua.retrogaming.gcac.helper.SerialHelper
 import ua.retrogaming.gcac.helper.ViewHelper
 import ua.retrogaming.gcac.services.DiscoveryService
-import ua.retrogaming.gcac.helper.SerialHelper
 
 class MainApplication : Application() {
 
     private val appModule = module {
-        single<DiscoveryService> { DiscoveryService(androidContext(), SerialHelper(androidContext())) }
+        single<LedSerialClient> { LedSerialClient() }
+        single<SerialHelper> { SerialHelper(androidContext()) }
+        single<DiscoveryService> { DiscoveryService(androidContext(), get(), get()) }
         single<ImageHelper> { ImageHelper(androidContext()) }
         single<ViewHelper> { ViewHelper(androidContext()) }
 

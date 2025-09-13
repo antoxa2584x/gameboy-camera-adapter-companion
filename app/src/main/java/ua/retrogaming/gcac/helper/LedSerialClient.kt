@@ -1,19 +1,31 @@
 package ua.retrogaming.gcac.helper
 
+import androidx.compose.ui.graphics.Color
 import com.hoho.android.usbserial.driver.SerialTimeoutException
 import com.hoho.android.usbserial.driver.UsbSerialPort
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.io.IOException
 import kotlin.math.max
+import kotlin.math.roundToInt
 
 
 class LedSerialClient(
-    private val port: UsbSerialPort
 ) {
+
+    private lateinit var port: UsbSerialPort
 
     /**
      * Write a text line (adds '\n') and flush.
      * Call from a background thread or coroutine.
      */
+
+    fun setDevicePort(port: UsbSerialPort){
+        this.port = port
+    }
+
     @Synchronized
     @Throws(IOException::class)
     private fun writeLine(port: UsbSerialPort, line: String, timeoutMs: Int = 500) {
@@ -56,24 +68,16 @@ class LedSerialClient(
      * GET /set_color?r=..&g=..&b=..&use_rgb=..
      */
     @Throws(IOException::class)
-    fun setLedColor(r: Int, g: Int, b: Int, useRgb: Boolean) {
-        val rr = r.coerceIn(0, 255)
-        val gg = g.coerceIn(0, 255)
-        val bb = b.coerceIn(0, 255)
+    fun setLedColor(color: Color, useRgb: Boolean) {
+        val rr = color.red.roundToInt().times(255).coerceIn(0, 255)
+        val gg = color.green.roundToInt().times(255).coerceIn(0, 255)
+        val bb = color.blue.roundToInt().times(255).coerceIn(0, 255)
         writeLine(port, "GET /set_color?r=$rr&g=$gg&b=$bb&use_rgb=$useRgb")
-    }
 
-    /**
-     * Convenience: hex "#RRGGBB" + toggle.
-     */
-    @Throws(IOException::class)
-    fun setLedColorHex(hex: String, useRgb: Boolean) {
-        val clean = hex.trim().removePrefix("#")
-        require(clean.length == 6) { "hex must be #RRGGBB" }
-        val r = clean.substring(0, 2).toInt(16)
-        val g = clean.substring(2, 4).toInt(16)
-        val b = clean.substring(4, 6).toInt(16)
-        setLedColor(r, g, b, useRgb)
+        GlobalScope.launch(Dispatchers.IO) {
+            delay(1000) // 1 second
+            loadLedStatus()
+        }
     }
 
     fun loadLedStatus() {

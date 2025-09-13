@@ -26,10 +26,8 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -48,14 +46,12 @@ import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
 import coil3.compose.AsyncImage
 import com.chibatching.kotpref.livedata.asLiveData
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 import ua.retrogaming.gcac.prefs.DevicePrefs
 import ua.retrogaming.gcac.prefs.ImagesCache
 import ua.retrogaming.gcac.ui.theme.CameraAdapterCompanionTheme
 import ua.retrogaming.gcac.view.GalleryView
-import ua.retrogaming.gcac.view.ImageView
-import kotlin.math.roundToInt
+import ua.retrogaming.gcac.view.ImagePopup
+import ua.retrogaming.gcac.view.LedPopup
 
 class MainActivity : ComponentActivity() {
     val connected = DevicePrefs.asLiveData(DevicePrefs::deviceConnected)
@@ -81,6 +77,7 @@ class MainActivity : ComponentActivity() {
                 val isLandscape = isLandscape()
 
                 val led by ledStatus.observeAsState(DevicePrefs.ledStatus)
+                var ledModalOpen by remember { mutableStateOf(false) }
 
                 Scaffold(modifier = Modifier.fillMaxSize()) { _ ->
                     Column(
@@ -93,9 +90,14 @@ class MainActivity : ComponentActivity() {
                             contentAlignment = Alignment.TopEnd
                         ) {
                             if (led != null) {
-                                Box(Modifier.fillMaxWidth().padding(top = 36.dp, end = 10.dp), contentAlignment = Alignment.CenterEnd) {
+                                Box(
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = 36.dp, end = 10.dp),
+                                    contentAlignment = Alignment.CenterEnd
+                                ) {
                                     LedStatus(led?.hex) {
-
+                                        ledModalOpen = true
                                     }
                                 }
                             }
@@ -119,6 +121,10 @@ class MainActivity : ComponentActivity() {
                         GalleryView().PrintingGallery(isLandscape)
                     }
 
+                    if (ledModalOpen)
+                        LedModal {
+                            ledModalOpen = false
+                        }
                     PhotoModal()
                     ProgressIndicator()
                 }
@@ -160,8 +166,13 @@ class MainActivity : ComponentActivity() {
             enter = fadeIn() + scaleIn(initialScale = 0.9f),            // pop-in
             exit = fadeOut() + scaleOut(targetScale = 0.9f)              // pop-out
         ) {
-            ImageView().Render(ImagesCache.currentPhoto)
+            ImagePopup().Render(ImagesCache.currentPhoto)
         }
+    }
+
+    @Composable
+    fun LedModal(onClick: () -> Unit) {
+        LedPopup().Render(onClick)
     }
 
     @Composable

@@ -17,7 +17,7 @@ import ua.retrogaming.gcac.helper.SerialHelper
 import ua.retrogaming.gcac.prefs.DevicePrefs
 
 
-class DiscoveryService(private val context: Context, private val serialHelper: SerialHelper) :
+class DiscoveryService(private val context: Context, private val serialHelper: SerialHelper, private val ledSerialClient: LedSerialClient) :
     BroadcastReceiver() {
     private val manager = context.getSystemService(Context.USB_SERVICE) as UsbManager
     private val filter = IntentFilter().apply {
@@ -81,9 +81,15 @@ class DiscoveryService(private val context: Context, private val serialHelper: S
 
         serialHelper.startListening(port)
 
-        LedSerialClient(port).loadLedStatus()
+        ledSerialClient.apply {
+            setDevicePort(port)
+            loadLedStatus()
+        }
 
         DevicePrefs.apply {
+            deviceVersion = driver.device.productName?.substringAfter("[", "")
+                ?.substringBefore("]", "")
+                .takeIf { it?.isNotEmpty() ?: false }
             deviceConnected = true
         }
     }

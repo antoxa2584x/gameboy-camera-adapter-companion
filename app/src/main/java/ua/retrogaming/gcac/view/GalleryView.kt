@@ -47,7 +47,7 @@ class GalleryView(): KoinComponent {
     @Composable
     fun ShowGallery(modifier: Modifier = Modifier, isLandscape: Boolean) {
         val pathsSet by recentCache.observeAsState(initial = ImagesCache.photos)
-        val paths = pathsSet.sortedBy { it.created }
+        val paths = pathsSet.sortedByDescending { it.created }
 
         if (paths.isEmpty()) {
             Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center,) {

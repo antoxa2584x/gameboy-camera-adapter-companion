@@ -60,16 +60,16 @@ class SerialHelper(private val context: Context) : KoinComponent {
                 val text = data.toString(Charsets.UTF_8)
                 Log.d("USB", text)
 
-                if (text.contains("GBCA_PHOTO_TRANSFER_BASE64")) {
+                if (text.contains("GBCA_PHOTO_TRANSFER")) {
                     ImagesCache.isPrinting = true
+                }
 
-                    sb.append(text)
+                sb.append(text)
 
-                    // process complete lines
-                    val lines = sb.linesFromBuffer()
-                    if (lines.isNotEmpty()) {
-                        handleLines(lines)
-                    }
+                // process complete lines
+                val lines = sb.linesFromBuffer()
+                if (lines.isNotEmpty()) {
+                    handleLines(lines)
                 }
 
                 if (ledStatus.matches(text)) {

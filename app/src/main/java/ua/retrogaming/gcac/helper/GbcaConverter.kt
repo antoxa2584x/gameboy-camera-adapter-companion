@@ -171,22 +171,39 @@ class GbcaConverter(
     ): Int {
         var sp = srcOff
         var dp = dstOff
-        val end = srcOff + srcLen
+        val end = (srcOff + srcLen).coerceAtMost(src.size)
 
+        // Uncompressed: memcpy with bounds check
         if (!isCompressed) {
-            System.arraycopy(src, sp, dst, dp, srcLen)
-            return dp + srcLen
+            val avail = (end - sp).coerceAtLeast(0)
+            val toCopy = avail.coerceAtMost(dst.size - dp)
+            if (toCopy > 0) System.arraycopy(src, sp, dst, dp, toCopy)
+            return dp + toCopy
         }
 
         while (sp < end) {
             val tag = src[sp++].toInt() and 0xFF
+
             if ((tag and 0x80) != 0) {
+                // RLE: repeat next byte (tag & 0x7F) + 2 times
+                if (sp >= end) break // malformed: no data byte
                 val data = src[sp++]
-                val count = (tag and 0x7F) + 2
+                var count = (tag and 0x7F) + 2
+                // clamp to dst capacity
+                val room = dst.size - dp
+                if (room <= 0) break
+                if (count > room) count = room
                 dst.fill(data, dp, dp + count)
                 dp += count
             } else {
-                val count = tag + 1
+                // Literal: copy (tag + 1) bytes
+                var count = tag + 1
+                val remaining = end - sp
+                if (remaining <= 0) break
+                if (count > remaining) count = remaining // clamp to available src
+                val room = dst.size - dp
+                if (room <= 0) break
+                if (count > room) count = room           // clamp to dst space
                 System.arraycopy(src, sp, dst, dp, count)
                 sp += count
                 dp += count
@@ -194,6 +211,7 @@ class GbcaConverter(
         }
         return dp
     }
+
 
     /**
      * Convert 2-bpp GB tiles (16 bytes/tile) to grayscale Bitmap.

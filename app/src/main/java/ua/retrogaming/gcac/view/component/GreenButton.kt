@@ -1,0 +1,38 @@
+package ua.retrogaming.gcac.view.component
+
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonColors
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import ua.retrogaming.gcac.ui.theme.PressStart2P
+import ua.retrogaming.gcac.ui.theme.SecondaryBackgroundColor
+
+class GreenButton {
+    @Composable
+    fun Render(text: String, onClick: () -> Unit){
+        Button(
+            onClick = onClick,
+            modifier = Modifier.fillMaxWidth()
+                .height(56.dp),
+            colors = ButtonColors(
+                SecondaryBackgroundColor,
+                Color.White,
+                SecondaryBackgroundColor,
+                Color.White
+            ),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Text(text, fontSize = 14.sp, style = MaterialTheme.typography.labelLarge.copy(
+                fontFamily = PressStart2P
+            ))
+        }
+    }
+}
