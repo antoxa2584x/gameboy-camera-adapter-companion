@@ -3,8 +3,8 @@ package ua.retrogaming.gcac.helper
 import androidx.compose.ui.graphics.Color
 import com.hoho.android.usbserial.driver.SerialTimeoutException
 import com.hoho.android.usbserial.driver.UsbSerialPort
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.IOException
@@ -74,7 +74,7 @@ class LedSerialClient(
         val bb = color.blue.roundToInt().times(255).coerceIn(0, 255)
         writeLine(port, "GET /set_color?r=$rr&g=$gg&b=$bb&use_rgb=$useRgb")
 
-        GlobalScope.launch(Dispatchers.IO) {
+        CoroutineScope(Dispatchers.IO).launch {
             delay(1000) // 1 second
             loadLedStatus()
         }

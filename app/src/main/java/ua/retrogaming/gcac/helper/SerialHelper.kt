@@ -1,6 +1,5 @@
 package ua.retrogaming.gcac.helper
 
-import ImageHelper
 import android.content.Context
 import android.graphics.Bitmap
 import android.util.Log
@@ -10,7 +9,7 @@ import com.hoho.android.usbserial.util.SerialInputOutputManager
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import ua.retrogaming.gcac.model.LedStatus
-import ua.retrogaming.gcac.prefs.DevicePrefs
+import ua.retrogaming.gcac.prefs.DeviceData
 import ua.retrogaming.gcac.prefs.ImagesCache
 import java.io.File
 import java.io.FileOutputStream
@@ -18,7 +17,7 @@ import java.io.FileOutputStream
 class SerialHelper(private val context: Context) : KoinComponent {
 
     private var ioManager: SerialInputOutputManager? = null
-    private val imageHelper: ImageHelper by inject()
+    private val imageHelper: ImageSaver by inject()
 
     private val sb = StringBuilder()
     private val converter = GbcaConverter()
@@ -62,18 +61,19 @@ class SerialHelper(private val context: Context) : KoinComponent {
 
                 if (text.contains("GBCA_PHOTO_TRANSFER")) {
                     ImagesCache.isPrinting = true
-                }
-
-                sb.append(text)
-
-                // process complete lines
-                val lines = sb.linesFromBuffer()
-                if (lines.isNotEmpty()) {
-                    handleLines(lines)
+                    collectedLines.clear()
                 }
 
                 if (ledStatus.matches(text)) {
-                    DevicePrefs.ledStatus = Gson().fromJson(text, LedStatus::class.java)
+                    DeviceData.ledStatus = Gson().fromJson(text, LedStatus::class.java)
+                } else {
+                    sb.append(text)
+
+                    // process complete lines
+                    val lines = sb.linesFromBuffer()
+                    if (lines.isNotEmpty()) {
+                        handleLines(lines)
+                    }
                 }
             }
 
@@ -91,7 +91,7 @@ class SerialHelper(private val context: Context) : KoinComponent {
         ioManager?.stop()
         ioManager = null
 
-        DevicePrefs.deviceConnected = false
-        DevicePrefs.ledStatus = null
+        DeviceData.deviceConnected = false
+        DeviceData.ledStatus = null
     }
 }

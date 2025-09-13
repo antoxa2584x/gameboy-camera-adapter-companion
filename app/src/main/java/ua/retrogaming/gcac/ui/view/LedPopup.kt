@@ -1,4 +1,4 @@
-package ua.retrogaming.gcac.view
+package ua.retrogaming.gcac.ui.view
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -40,17 +40,17 @@ import com.github.skydoves.colorpicker.compose.rememberColorPickerController
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import ua.retrogaming.gcac.helper.LedSerialClient
-import ua.retrogaming.gcac.prefs.DevicePrefs
+import ua.retrogaming.gcac.prefs.DeviceData
 import ua.retrogaming.gcac.ui.theme.BackgroundColor
 import ua.retrogaming.gcac.ui.theme.SecondaryBackgroundColor
-import ua.retrogaming.gcac.view.component.CloseButton
-import ua.retrogaming.gcac.view.component.GreenButton
+import ua.retrogaming.gcac.ui.component.CloseButton
+import ua.retrogaming.gcac.ui.component.GreenButton
 
 
 class LedPopup : KoinComponent {
 
     private val ledSerialClient: LedSerialClient by inject()
-    val ledStatus = DevicePrefs.ledStatus
+    val ledStatus = DeviceData.ledStatus
 
     @OptIn(ExperimentalComposeUiApi::class)
     @Composable
@@ -77,7 +77,7 @@ class LedPopup : KoinComponent {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
+                        .padding(bottom = 16.dp),
                     contentAlignment = AbsoluteAlignment.CenterRight
                 ) {
                     CloseButton().Render(onCloseClick)
@@ -98,7 +98,7 @@ class LedPopup : KoinComponent {
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    "Adapter version: v"+DevicePrefs.deviceVersion,
+                    "Adapter version: v"+DeviceData.deviceVersion,
                     Modifier.padding(10.dp),
                     fontSize = 12.sp,
                     color = Color.Yellow,
@@ -183,7 +183,7 @@ class LedPopup : KoinComponent {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            GreenButton().Render("Set LED Color", {
+            GreenButton().Render(text = "Set LED Color", onClick = {
                 onSetColor(selectedColor, useRgb)
             })
         }

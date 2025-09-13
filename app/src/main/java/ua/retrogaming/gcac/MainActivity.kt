@@ -1,16 +1,12 @@
 package ua.retrogaming.gcac
 
+import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -40,24 +36,32 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
 import coil3.compose.AsyncImage
 import com.chibatching.kotpref.livedata.asLiveData
-import ua.retrogaming.gcac.prefs.DevicePrefs
+import ua.retrogaming.gcac.prefs.DeviceData
 import ua.retrogaming.gcac.prefs.ImagesCache
+import ua.retrogaming.gcac.prefs.UpdateCheckData
 import ua.retrogaming.gcac.ui.theme.CameraAdapterCompanionTheme
-import ua.retrogaming.gcac.view.GalleryView
-import ua.retrogaming.gcac.view.ImagePopup
-import ua.retrogaming.gcac.view.LedPopup
+import ua.retrogaming.gcac.ui.theme.PressStart2P
+import ua.retrogaming.gcac.ui.view.GalleryView
+import ua.retrogaming.gcac.ui.view.ImagePopup
+import ua.retrogaming.gcac.ui.view.LedPopup
+import androidx.core.net.toUri
 
 class MainActivity : ComponentActivity() {
-    val connected = DevicePrefs.asLiveData(DevicePrefs::deviceConnected)
+    val connected = DeviceData.asLiveData(DeviceData::deviceConnected)
+    val updateAvailable = UpdateCheckData.asLiveData(UpdateCheckData::isUpdateAvailable)
     val isPrinting = ImagesCache.asLiveData(ImagesCache::isPrinting)
     val currentPhoto = ImagesCache.asLiveData(ImagesCache::currentPhoto)
-    val ledStatus = DevicePrefs.asLiveData(DevicePrefs::ledStatus)
+    val ledStatus = DeviceData.asLiveData(DeviceData::ledStatus)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -66,8 +70,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.dark(
                 Color.Transparent.toArgb()
-            ),
-            navigationBarStyle = SystemBarStyle.dark(
+            ), navigationBarStyle = SystemBarStyle.dark(
                 Color.Transparent.toArgb(),
             )
         )
@@ -76,7 +79,7 @@ class MainActivity : ComponentActivity() {
             CameraAdapterCompanionTheme {
                 val isLandscape = isLandscape()
 
-                val led by ledStatus.observeAsState(DevicePrefs.ledStatus)
+                val led by ledStatus.observeAsState(DeviceData.ledStatus)
                 var ledModalOpen by remember { mutableStateOf(false) }
 
                 Scaffold(modifier = Modifier.fillMaxSize()) { _ ->
@@ -85,9 +88,7 @@ class MainActivity : ComponentActivity() {
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Box(
-                            Modifier
-                                .fillMaxWidth(),
-                            contentAlignment = Alignment.TopEnd
+                            Modifier.fillMaxWidth(), contentAlignment = Alignment.TopEnd
                         ) {
                             if (led != null) {
                                 Box(
@@ -107,8 +108,7 @@ class MainActivity : ComponentActivity() {
                                     modifier = Modifier
                                         .fillMaxWidth(if (!isLandscape) 0.7f else 0.3f)
                                         .padding(
-                                            top = if (!isLandscape) 48.dp else 20.dp,
-                                            bottom = 10.dp
+                                            top = if (!isLandscape) 48.dp else 20.dp, bottom = 10.dp
                                         ),
                                     model = "file:///android_asset/logo.webp",
                                     contentDescription = "logo",
@@ -118,13 +118,12 @@ class MainActivity : ComponentActivity() {
                         }
 
                         ConnectDevice()
+
                         GalleryView().PrintingGallery(isLandscape)
                     }
 
-                    if (ledModalOpen)
-                        LedModal {
-                            ledModalOpen = false
-                        }
+                    if (ledModalOpen) LedPopup().Render({ ledModalOpen = false })
+
                     PhotoModal()
                     ProgressIndicator()
                 }
@@ -153,26 +152,16 @@ class MainActivity : ComponentActivity() {
                     role = Role.Button,
                     onClick = onClick
                 )
-                .semantics { }
-        )
+                .semantics { })
     }
 
     @Composable
     fun PhotoModal() {
         val photoSubscription by currentPhoto.observeAsState(ImagesCache.currentPhoto)
 
-        AnimatedVisibility(
-            visible = photoSubscription != null,
-            enter = fadeIn() + scaleIn(initialScale = 0.9f),            // pop-in
-            exit = fadeOut() + scaleOut(targetScale = 0.9f)              // pop-out
-        ) {
+        if (photoSubscription != null) {
             ImagePopup().Render(ImagesCache.currentPhoto)
         }
-    }
-
-    @Composable
-    fun LedModal(onClick: () -> Unit) {
-        LedPopup().Render(onClick)
     }
 
     @Composable
@@ -191,8 +180,7 @@ class MainActivity : ComponentActivity() {
                 contentAlignment = Alignment.Center
             ) {
                 CircularProgressIndicator(
-                    strokeWidth = 4.dp,
-                    color = Color.White
+                    strokeWidth = 4.dp, color = Color.White
                 )
             }
         }
@@ -200,14 +188,40 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     fun ConnectDevice(modifier: Modifier = Modifier) {
-        val connected by connected.observeAsState(initial = DevicePrefs.deviceConnected)
-        if (!connected)
-            Text(
-                "Connect your Adapter",
-                modifier.padding(10.dp),
-                fontSize = 14.sp,
-                color = Color.Yellow
+        val connected by connected.observeAsState(DeviceData.deviceConnected)
+
+        if (!connected) Text(
+            "Connect your Adapter", modifier.padding(10.dp), fontSize = 14.sp, color = Color.Yellow
+        )
+        else UpdateAvailable()
+    }
+
+    @Composable
+    fun UpdateAvailable(modifier: Modifier = Modifier) {
+        val updateAvailable by updateAvailable.observeAsState(UpdateCheckData.isUpdateAvailable)
+
+        if (updateAvailable) Text(
+            "Firmware update\navailable: v${UpdateCheckData.latestVersion}",
+            modifier
+                .padding(10.dp)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() }, indication = null
+                ) {
+                    val intent = Intent(Intent.ACTION_VIEW, UpdateCheckData.releaseUrl.toUri())
+                    startActivity(intent)
+                },
+            fontSize = 12.sp,
+            textAlign = TextAlign.Center,
+            color = Color.Yellow,
+            style = TextStyle(
+                fontFamily = PressStart2P,
+                fontWeight = FontWeight.Normal,
+                fontSize = 16.sp,
+                lineHeight = 24.sp,
+                letterSpacing = 0.5.sp,
+                textDecoration = TextDecoration.Underline
             )
+        )
     }
 
     @Composable

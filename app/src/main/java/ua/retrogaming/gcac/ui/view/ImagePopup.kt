@@ -1,6 +1,5 @@
-package ua.retrogaming.gcac.view
+package ua.retrogaming.gcac.ui.view
 
-import ImageHelper
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -14,31 +13,29 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.AbsoluteAlignment
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import coil3.compose.SubcomposeAsyncImage
-import coil3.compose.SubcomposeAsyncImageContent
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import ua.retrogaming.gcac.helper.ImageSaver
+import ua.retrogaming.gcac.helper.PocketCameraPalettes
 import ua.retrogaming.gcac.helper.ViewHelper
 import ua.retrogaming.gcac.model.PhotoData
 import ua.retrogaming.gcac.prefs.ImagesCache
 import ua.retrogaming.gcac.ui.theme.BackgroundColor
-import ua.retrogaming.gcac.view.component.CloseButton
-import ua.retrogaming.gcac.view.component.GreenButton
+import ua.retrogaming.gcac.ui.component.CloseButton
+import ua.retrogaming.gcac.ui.component.GbPaletteImage
+import ua.retrogaming.gcac.ui.component.GreenButton
 
 
 class ImagePopup : KoinComponent {
 
-    private val imageHelper: ImageHelper by inject()
+    private val imageSaver: ImageSaver by inject()
     private val viewHelper: ViewHelper by inject()
 
     @Composable
@@ -54,7 +51,7 @@ class ImagePopup : KoinComponent {
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null
-                ) {               },
+                ) { },
             contentAlignment = Alignment.Center
         ) {
             Column(
@@ -94,9 +91,18 @@ class ImagePopup : KoinComponent {
         ) {
             DynamicAspectImage(currentPhoto.path)
 
-            GreenButton().Render("Save", {
+            GreenButton().Render(Modifier.padding(8.dp), "Save", {
                 ImagesCache.isPrinting = true
-                val result = imageHelper.saveImageJpegScoped(currentPhoto, ImageHelper.SaveOptions(scale = 0))
+
+                val result = imageSaver.saveImageJpegScoped(
+                    data = currentPhoto,
+                    opts = ImageSaver.SaveOptions(
+                        scale = 2,
+                        filter = ImageSaver.ImageFilter.PocketPalette(
+                            palette = PocketCameraPalettes.findPalletByName(ImagesCache.colorScheme)
+                        )
+                    )
+                )
 
                 viewHelper.showToast(if (result) "Photo saved to Gallery" else "Error")
 
@@ -108,26 +114,13 @@ class ImagePopup : KoinComponent {
 
     @Composable
     fun DynamicAspectImage(path: String) {
-        var ratio by remember { mutableStateOf<Float?>(null) }
-
-        SubcomposeAsyncImage(
-            model = path,
-            contentDescription = null,
+        GbPaletteImage(
+            data = path,
+            scheme = ImagesCache.colorScheme,
             modifier = Modifier
-                .padding(8.dp)
-                .fillMaxWidth()
-                .let { m -> ratio?.let { m.aspectRatio(it) } ?: m }
-                .clip(MaterialTheme.shapes.medium)// apply when known
-        ) {
-            val painter = painter
-            if (ratio == null) {
-                val w = painter.intrinsicSize.width
-                val h = painter.intrinsicSize.height
-                if (w > 0f && h > 0f) {
-                    ratio = w / h
-                }
-            }
-            SubcomposeAsyncImageContent()
-        }
+                .aspectRatio(1.14f) // square cells
+                .clip(MaterialTheme.shapes.medium)
+                .padding(4.dp)
+        )
     }
 }

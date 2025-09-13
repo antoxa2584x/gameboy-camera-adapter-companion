@@ -7,10 +7,11 @@ import ua.retrogaming.gcac.model.PhotoData
 
 object ImagesCache : KotprefModel() {
 
-    val recentItems by stringSetPref(setOf())
     var photos by gsonPref(listOf<PhotoData>())
     var isPrinting by booleanPref(false)
     var currentPhoto by gsonNullablePref <PhotoData>(null)
+
+    var colorScheme by stringPref("grayscale")
 
     fun addPhotos(path: String){
         photos = photos.toMutableList().apply {

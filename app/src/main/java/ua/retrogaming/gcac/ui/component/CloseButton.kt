@@ -1,4 +1,4 @@
-package ua.retrogaming.gcac.view.component
+package ua.retrogaming.gcac.ui.component
 
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.height

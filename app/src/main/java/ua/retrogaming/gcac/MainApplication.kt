@@ -1,6 +1,5 @@
 package ua.retrogaming.gcac
 
-import ImageHelper
 import android.app.Application
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -13,6 +12,7 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
 import org.koin.dsl.module
+import ua.retrogaming.gcac.helper.ImageSaver
 import ua.retrogaming.gcac.helper.LedSerialClient
 import ua.retrogaming.gcac.helper.SerialHelper
 import ua.retrogaming.gcac.helper.ViewHelper
@@ -24,7 +24,7 @@ class MainApplication : Application() {
         single<LedSerialClient> { LedSerialClient() }
         single<SerialHelper> { SerialHelper(androidContext()) }
         single<DiscoveryService> { DiscoveryService(androidContext(), get(), get()) }
-        single<ImageHelper> { ImageHelper(androidContext()) }
+        single<ImageSaver> { ImageSaver(androidContext()) }
         single<ViewHelper> { ViewHelper(androidContext()) }
 
     }

@@ -1,4 +1,4 @@
-package ua.retrogaming.gcac.view.component
+package ua.retrogaming.gcac.ui.component
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -17,10 +17,10 @@ import ua.retrogaming.gcac.ui.theme.SecondaryBackgroundColor
 
 class GreenButton {
     @Composable
-    fun Render(text: String, onClick: () -> Unit){
+    fun Render(modifier: Modifier = Modifier, text: String = "", onClick: () -> Unit){
         Button(
             onClick = onClick,
-            modifier = Modifier.fillMaxWidth()
+            modifier = modifier.fillMaxWidth()
                 .height(56.dp),
             colors = ButtonColors(
                 SecondaryBackgroundColor,

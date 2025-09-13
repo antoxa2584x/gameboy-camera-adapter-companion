@@ -9,12 +9,13 @@ import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
 import android.os.Build
 import android.util.Log
+import com.chibatching.kotpref.bulk
 import com.hoho.android.usbserial.driver.UsbSerialDriver
 import com.hoho.android.usbserial.driver.UsbSerialPort
 import com.hoho.android.usbserial.driver.UsbSerialProber
 import ua.retrogaming.gcac.helper.LedSerialClient
 import ua.retrogaming.gcac.helper.SerialHelper
-import ua.retrogaming.gcac.prefs.DevicePrefs
+import ua.retrogaming.gcac.prefs.DeviceData
 
 
 class DiscoveryService(private val context: Context, private val serialHelper: SerialHelper, private val ledSerialClient: LedSerialClient) :
@@ -86,12 +87,14 @@ class DiscoveryService(private val context: Context, private val serialHelper: S
             loadLedStatus()
         }
 
-        DevicePrefs.apply {
+        DeviceData.bulk  {
             deviceVersion = driver.device.productName?.substringAfter("[", "")
                 ?.substringBefore("]", "")
                 .takeIf { it?.isNotEmpty() ?: false }
             deviceConnected = true
         }
+
+        UpdateCheckService().checkUpdate()
     }
 
     override fun onReceive(context: Context?, intent: Intent?) {
@@ -117,7 +120,7 @@ class DiscoveryService(private val context: Context, private val serialHelper: S
     }
 
     fun disconnectDevice() {
-        DevicePrefs.deviceConnected = false
+        DeviceData.deviceConnected = false
         serialHelper.stopListening()
     }
 
