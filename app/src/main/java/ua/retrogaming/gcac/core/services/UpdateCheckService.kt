@@ -1,4 +1,4 @@
-package ua.retrogaming.gcac.services
+package ua.retrogaming.gcac.core.services
 
 import com.chibatching.kotpref.bulk
 import kotlinx.coroutines.CoroutineScope
@@ -6,9 +6,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
+import ua.retrogaming.gcac.data.prefs.DeviceData
+import ua.retrogaming.gcac.data.prefs.UpdateCheckData
 import ua.retrogaming.gcac.model.UpdateCheckResult
-import ua.retrogaming.gcac.prefs.DeviceData
-import ua.retrogaming.gcac.prefs.UpdateCheckData
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.net.HttpURLConnection

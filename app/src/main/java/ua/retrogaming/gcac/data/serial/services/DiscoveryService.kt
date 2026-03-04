@@ -1,4 +1,4 @@
-package ua.retrogaming.gcac.services
+package ua.retrogaming.gcac.data.serial.services
 
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
@@ -13,9 +13,10 @@ import com.chibatching.kotpref.bulk
 import com.hoho.android.usbserial.driver.UsbSerialDriver
 import com.hoho.android.usbserial.driver.UsbSerialPort
 import com.hoho.android.usbserial.driver.UsbSerialProber
-import ua.retrogaming.gcac.helper.LedSerialClient
-import ua.retrogaming.gcac.helper.SerialHelper
-import ua.retrogaming.gcac.prefs.DeviceData
+import ua.retrogaming.gcac.core.services.UpdateCheckService
+import ua.retrogaming.gcac.data.prefs.DeviceData
+import ua.retrogaming.gcac.data.serial.LedSerialClient
+import ua.retrogaming.gcac.data.serial.SerialHelper
 
 
 class DiscoveryService(private val context: Context, private val serialHelper: SerialHelper, private val ledSerialClient: LedSerialClient) :

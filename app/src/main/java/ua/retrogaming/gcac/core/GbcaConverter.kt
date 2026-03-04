@@ -1,8 +1,10 @@
-package ua.retrogaming.gcac.helper
+package ua.retrogaming.gcac.core
 
 import android.graphics.Bitmap
 import android.util.Base64
 import android.util.Log
+import androidx.core.graphics.createBitmap
+import androidx.core.graphics.scale
 import java.io.ByteArrayOutputStream
 
 /**
@@ -26,7 +28,7 @@ class GbcaConverter(
         private const val COMMAND_DATA     = 0x04
     }
 
-    data class Frame(val bitmap: Bitmap, val sourceCmd: Int)
+    data class Frame(val originalBitmap: Bitmap, val sourceCmd: Int)
 
     /**
      * Top-level helper: feed raw log lines (with timestamps) and get all decoded frames.
@@ -45,13 +47,13 @@ class GbcaConverter(
         val out = ByteArrayOutputStream(64 * 1024)
 
         val headerPrefixes = listOf("GBCA_PHOTO_TRANSFER")
-        val tokenRe = Regex("""[A-Za-z0-9+/=]+""")
+        val tokenRe = Regex("""[A-Za-z0-9+/=]{4,}""")
 
         fun decodeToken(tok: String) {
             // keep only base64 chars
             val clean = tok.filter { it.isLetterOrDigit() || it == '+' || it == '/' || it == '=' }
-            if (clean.isEmpty()) return
-            // pad to multiple of 4
+            if (clean.length < 4) return
+            // pad to multiple of 4 (though if it matched {4,} it might be better)
             val pad = (4 - (clean.length % 4)) % 4
             val padded = if (pad > 0 && !clean.endsWith("=")) clean + "=".repeat(pad) else clean
             try {
@@ -59,7 +61,7 @@ class GbcaConverter(
                 out.write(bytes)
             } catch (e: IllegalArgumentException) {
                 // token wasn’t valid base64—skip it (or log if you want)
-                Log.w("GbcaConverter", "skip bad token len=${padded.length}")
+                Log.w("GbcaConverter", "skip bad token len=${padded.length}: $padded")
             }
         }
 
@@ -108,18 +110,21 @@ class GbcaConverter(
                     if (idx + 2 > blob.size) break
                     val len = (blob[idx].toInt() and 0xFF) or ((blob[idx + 1].toInt() and 0xFF) shl 8)
                     idx += 2
-                    if (len != 4 || idx + 4 > blob.size) { idx = blob.size; break }
+                    if (idx + len > blob.size) {
+                        idx = blob.size
+                        break
+                    }
 
-                    val sheets   = blob[idx].toInt() and 0xFF
-                    val margins  = blob[idx + 1].toInt() and 0xFF
-                    var palette  = blob[idx + 2].toInt() and 0xFF
+                    val sheets = blob[idx].toInt() and 0xFF
+                    val margins = blob[idx + 1].toInt() and 0xFF
+                    var palette = blob[idx + 2].toInt() and 0xFF
                     val exposure = (0x80 + (blob[idx + 3].toInt() and 0xFF)).coerceAtMost(0xFF)
-                    idx += 4
+                    idx += len
                     if (palette == 0) palette = 0xE4
                     // Render region accumulated since last cut
                     val region = slice(bufferStart, ptr)
-                    tilesToBitmapOrNull(region, printerWidth)?.let { bmp ->
-                        frames += Frame(bmp, COMMAND_PRINT)
+                    tilesToBitmapOrNull(region, printerWidth)?.let { original ->
+                        frames += Frame(original, COMMAND_PRINT)
                     }
                     bufferStart = ptr
                     // (you can use sheets/margins/palette/exposure if you map palettes)
@@ -133,8 +138,8 @@ class GbcaConverter(
                     ptr = rleDecode(isCompressed = false, src = blob, srcOff = idx, srcLen = len, dst = processed, dstOff = ptr)
                     idx += len
                     val region = slice(startPtr, ptr)
-                    tilesToBitmapOrNull(region, cameraWidth)?.let { bmp ->
-                        frames += Frame(bmp, COMMAND_TRANSFER)
+                    tilesToBitmapOrNull(region, cameraWidth)?.let { original ->
+                        frames += Frame(original, COMMAND_TRANSFER)
                     }
                     bufferStart = ptr
                 }
@@ -217,6 +222,7 @@ class GbcaConverter(
      * Convert 2-bpp GB tiles (16 bytes/tile) to grayscale Bitmap.
      * widthPixels must be a multiple of 8 (tiles per row = width/8).
      * Returns null if there isn't at least one full row of tiles.
+     * Returns a Bitmap.
      */
     private fun tilesToBitmapOrNull(tiles: ByteArray, widthPixels: Int): Bitmap? {
         require(widthPixels % 8 == 0) { "widthPixels must be multiple of 8" }
@@ -230,7 +236,7 @@ class GbcaConverter(
         if (rowsTiles == 0) return null
 
         val heightPixels = rowsTiles * 8
-        val bmp = Bitmap.createBitmap(widthPixels, heightPixels, Bitmap.Config.ARGB_8888)
+        val bmp = createBitmap(widthPixels, heightPixels)
         val argb = IntArray(widthPixels * heightPixels)
 
         var tileIdx = 0
@@ -239,14 +245,15 @@ class GbcaConverter(
                 val base = tileIdx * 16
                 if (base + 16 > tiles.size) break
                 for (row in 0 until 8) {
-                    val lo = tiles[base + row*2].toInt() and 0xFF
-                    val hi = tiles[base + row*2 + 1].toInt() and 0xFF
+                    val lo = tiles[base + row * 2].toInt() and 0xFF
+                    val hi = tiles[base + row * 2 + 1].toInt() and 0xFF
                     for (bit in 7 downTo 0) {
                         val v = (((hi shr bit) and 1) shl 1) or ((lo shr bit) and 1) // 0..3
                         val gray = (255 - v * 85) and 0xFF  // 0=white .. 3=black
-                        val x = tx*8 + (7 - bit)
-                        val y = ty*8 + row
-                        argb[y*widthPixels + x] = (0xFF shl 24) or (gray shl 16) or (gray shl 8) or gray
+                        val x = tx * 8 + (7 - bit)
+                        val y = ty * 8 + row
+                        argb[y * widthPixels + x] =
+                            (0xFF shl 24) or (gray shl 16) or (gray shl 8) or gray
                     }
                 }
                 tileIdx++
@@ -254,6 +261,7 @@ class GbcaConverter(
         }
 
         bmp.setPixels(argb, 0, widthPixels, 0, 0, widthPixels, heightPixels)
+
         return bmp
     }
 }

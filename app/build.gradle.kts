@@ -28,12 +28,23 @@ android {
             )
         }
     }
+
+    applicationVariants.all {
+        outputs.all {
+            val output = this as com.android.build.gradle.internal.api.ApkVariantOutputImpl
+            output.outputFileName = "AdapterCompanion-${defaultConfig.versionName}.apk"
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-    kotlinOptions {
-        jvmTarget = "11"
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
+            freeCompilerArgs.add("-Xopt-in=kotlin.RequiresOptIn")
+        }
     }
     buildFeatures {
         compose = true

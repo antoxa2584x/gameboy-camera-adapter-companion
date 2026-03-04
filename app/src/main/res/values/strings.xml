@@ -1,3 +1,32 @@
 <resources>
     <string name="app_name">Camera Adapter Companion</string>
+    <string name="adapter_version">Adapter version: v%1$s</string>
+    <string name="choose_led_color">Choose LED color</string>
+    <string name="led_color_hint">If color not as expected, switch this</string>
+    <string name="set_led_color">Set LED Color</string>
+    <string name="start_printing_hint">Start printing on your Game Boy\nPhotos will appear here</string>
+    <string name="save_photo">Save</string>
+    <string name="photo_saved">Photo saved to Gallery</string>
+    <string name="save_error">Error saving photo</string>
+    <string name="is_printing">Printing…</string>
+    <string name="connect_adapter">Connect your Adapter</string>
+    <string name="min_adapter_version">min version 1.4.7</string>
+    <string name="firmware_update_available">Firmware update\navailable: v%1$s</string>
+    <string name="update_available">Update Available!</string>
+    <string name="new_version_available">A new version v%1$s is available.</string>
+    <string name="download_update">Download Update</string>
+    <string name="language_settings">Language</string>
+    <string name="lang_en">English</string>
+    <string name="lang_uk">Ukrainian</string>
+    <string name="save_all">Save All</string>
+    <string name="remove_all">Remove All</string>
+    <string name="remove">Remove</string>
+    <string name="all_saved">All photos saved</string>
+    <string name="all_removed">All photos removed</string>
+    <string name="photo_removed">Photo removed</string>
+    <string name="remove_confirm_title">Confirm Removal</string>
+    <string name="remove_photo_confirm_msg">Are you sure you want to remove this photo?</string>
+    <string name="remove_all_confirm_msg">Are you sure you want to remove all photos?</string>
+    <string name="confirm">Confirm</string>
+    <string name="cancel">Cancel</string>
 </resources>

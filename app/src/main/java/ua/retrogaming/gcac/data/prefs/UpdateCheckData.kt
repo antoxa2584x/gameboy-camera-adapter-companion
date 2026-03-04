@@ -1,4 +1,4 @@
-package ua.retrogaming.gcac.prefs
+package ua.retrogaming.gcac.data.prefs
 
 import com.chibatching.kotpref.KotprefModel
 

@@ -1,11 +1,11 @@
-package ua.retrogaming.gcac.prefs
+package ua.retrogaming.gcac.data.prefs
 
 import com.chibatching.kotpref.KotprefModel
 import com.chibatching.kotpref.gsonpref.gsonNullablePref
 import com.chibatching.kotpref.gsonpref.gsonPref
 import ua.retrogaming.gcac.model.PhotoData
 
-object ImagesCache : KotprefModel() {
+object ImageCache : KotprefModel() {
 
     var photos by gsonPref(listOf<PhotoData>())
     var isPrinting by booleanPref(false)
@@ -13,9 +13,19 @@ object ImagesCache : KotprefModel() {
 
     var colorScheme by stringPref("grayscale")
 
-    fun addPhotos(path: String){
+    fun addPhotos(path: String, originalPath: String = ""){
         photos = photos.toMutableList().apply {
-            add(PhotoData(path))
+            add(PhotoData(path = path, originalPath = originalPath))
         }
+    }
+
+    fun removePhoto(photo: PhotoData) {
+        photos = photos.toMutableList().apply {
+            remove(photo)
+        }
+    }
+
+    fun removeAll() {
+        photos = emptyList()
     }
 }

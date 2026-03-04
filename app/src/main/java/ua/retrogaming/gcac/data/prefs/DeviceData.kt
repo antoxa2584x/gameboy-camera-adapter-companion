@@ -1,4 +1,4 @@
-package ua.retrogaming.gcac.prefs
+package ua.retrogaming.gcac.data.prefs
 
 import com.chibatching.kotpref.KotprefModel
 import com.chibatching.kotpref.gsonpref.gsonNullablePref
@@ -8,4 +8,5 @@ object DeviceData : KotprefModel() {
     var deviceConnected by booleanPref(false)
     var ledStatus by gsonNullablePref<LedStatus>(null)
     var deviceVersion by nullableStringPref("")
+    var language by stringPref("en")
 }

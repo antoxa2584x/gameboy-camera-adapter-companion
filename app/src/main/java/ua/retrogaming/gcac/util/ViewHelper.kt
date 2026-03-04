@@ -1,4 +1,4 @@
-package ua.retrogaming.gcac.helper
+package ua.retrogaming.gcac.util
 
 import android.content.Context
 import android.widget.Toast

@@ -1,4 +1,4 @@
-package ua.retrogaming.gcac.helper
+package ua.retrogaming.gcac.data.serial
 
 import androidx.compose.ui.graphics.Color
 import com.hoho.android.usbserial.driver.SerialTimeoutException

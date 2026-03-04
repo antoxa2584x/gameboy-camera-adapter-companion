@@ -17,22 +17,33 @@ import ua.retrogaming.gcac.ui.theme.SecondaryBackgroundColor
 
 class GreenButton {
     @Composable
-    fun Render(modifier: Modifier = Modifier, text: String = "", onClick: () -> Unit){
+    fun Render(
+        modifier: Modifier = Modifier,
+        text: String = "",
+        containerColor: Color = SecondaryBackgroundColor,
+        contentColor: Color = Color.White,
+        fillMaxWidth: Boolean = true,
+        onClick: () -> Unit
+    ) {
         Button(
             onClick = onClick,
-            modifier = modifier.fillMaxWidth()
-                .height(56.dp),
+            modifier = if (fillMaxWidth) modifier.fillMaxWidth().height(48.dp) else modifier.height(48.dp),
             colors = ButtonColors(
-                SecondaryBackgroundColor,
-                Color.White,
-                SecondaryBackgroundColor,
-                Color.White
+                containerColor,
+                contentColor,
+                containerColor,
+                contentColor
             ),
             shape = RoundedCornerShape(12.dp)
         ) {
-            Text(text, fontSize = 14.sp, style = MaterialTheme.typography.labelLarge.copy(
-                fontFamily = PressStart2P
-            ))
+            Text(
+                text,
+                fontSize = 8.sp,
+                maxLines = 1,
+                style = MaterialTheme.typography.labelLarge.copy(
+                    fontFamily = PressStart2P
+                )
+            )
         }
     }
 }
