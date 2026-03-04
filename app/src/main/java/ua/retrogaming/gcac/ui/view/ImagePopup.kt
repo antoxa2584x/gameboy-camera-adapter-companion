@@ -127,7 +127,7 @@ class ImagePopup : KoinComponent {
                 .padding(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            DynamicAspectImage(currentPhoto.path)
+            DynamicAspectImage(currentPhoto)
 
             val saveSuccessText = stringResource(R.string.photo_saved)
             val saveErrorText = stringResource(R.string.save_error)
@@ -149,7 +149,7 @@ class ImagePopup : KoinComponent {
                             }
 
                             val colorScheme = ImageCache.colorScheme
-                            val result = imageSaver.saveImageJpegScoped(
+                            val resultPath = imageSaver.saveImageJpegScoped(
                                 data = currentPhoto,
                                 opts = ImageSaver.SaveOptions(
                                     scale = 20,
@@ -161,10 +161,14 @@ class ImagePopup : KoinComponent {
                             )
 
                             withContext(Dispatchers.Main) {
-                                viewHelper.showToast(if (result) saveSuccessText else saveErrorText)
+                                viewHelper.showToast(if (resultPath != null) saveSuccessText else saveErrorText)
                                 ImageCache.isPrinting = false
 
-                                if (result) {
+                                if (resultPath != null) {
+                                    ImageCache.currentPhoto = currentPhoto.copy(
+                                        path = resultPath,
+                                        filter = colorScheme
+                                    )
                                     coroutineScope.launch {
                                         repeat(3) {
                                             shakeAnim.animateTo(
@@ -199,15 +203,17 @@ class ImagePopup : KoinComponent {
 
 
     @Composable
-    fun DynamicAspectImage(path: String) {
+    fun DynamicAspectImage(photo: PhotoData) {
         GbPaletteImage(
-            data = path,
+            data = photo.path,
             scheme = ImageCache.colorScheme,
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(MaterialTheme.shapes.medium)
                 .padding(4.dp),
-            contentScale = ContentScale.FillWidth
+            contentScale = ContentScale.FillWidth,
+            applyPalette = photo.filter.isEmpty(),
+            upscale = 20
         )
     }
 }

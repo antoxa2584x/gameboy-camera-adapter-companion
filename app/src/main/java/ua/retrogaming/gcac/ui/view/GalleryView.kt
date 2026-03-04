@@ -158,7 +158,7 @@ class GalleryView() : KoinComponent {
                                         )
                                     )
                                 )
-                                if (!result) allSuccess = false
+                                if (result == null) allSuccess = false
                             }
                             withContext(Dispatchers.Main) {
                                 viewHelper.showToast(if (allSuccess) saveAllSuccessText else saveErrorText)

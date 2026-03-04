@@ -8,6 +8,7 @@ import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -170,6 +171,16 @@ class MainActivity : ComponentActivity() {
 
                 val anyPopupOpen = (ledModalOpen && led != null) || photoSubscription != null
 
+                if (anyPopupOpen) {
+                    BackHandler {
+                        if (photoSubscription != null) {
+                            ImageCache.currentPhoto = null
+                        } else if (ledModalOpen) {
+                            ledModalOpen = false
+                        }
+                    }
+                }
+
                 if (ledModalOpen && led == null) {
                     ledModalOpen = false
                 }
@@ -280,7 +291,7 @@ class MainActivity : ComponentActivity() {
                     if (ledModalOpen) SettingsPopup().Render({ ledModalOpen = false })
 
                     if (photoSubscription != null) {
-                        ImagePopup().Render(ImageCache.currentPhoto)
+                        ImagePopup().Render(photoSubscription)
                     }
 
                     ProgressIndicator()

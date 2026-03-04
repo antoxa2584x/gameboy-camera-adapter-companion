@@ -16,7 +16,9 @@ fun GbPaletteImage(
     data: Any, // Uri, File, URL, resource, etc.
     scheme: String,
     modifier: Modifier = Modifier,
-    contentScale: ContentScale = ContentScale.Fit
+    contentScale: ContentScale = ContentScale.Fit,
+    applyPalette: Boolean = true,
+    upscale: Int = 1
 ) {
     val context = LocalContext.current
 
@@ -24,11 +26,15 @@ fun GbPaletteImage(
         PocketCameraPalettes.findPalletByName(scheme)
     }
 
-    val request = remember(data, palette) {
-        ImageRequest.Builder(context)
+    val request = remember(data, palette, applyPalette, upscale) {
+        val builder = ImageRequest.Builder(context)
             .data(data)
-            .transformations(PocketPaletteTransformation(palette))
-            .build()
+        
+        if (applyPalette) {
+            builder.transformations(PocketPaletteTransformation(palette, upscale = upscale))
+        }
+        
+        builder.build()
     }
 
     AsyncImage(

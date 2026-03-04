@@ -54,7 +54,7 @@ class ImageSaver(private val context: Context) {
         is ImageFilter.PocketPalette -> applyPocketPalette(bmp, filter.palette, filter.thresholds)
     }
 
-    fun saveImageJpegScoped(data: PhotoData, opts: SaveOptions = SaveOptions()): Boolean {
+    fun saveImageJpegScoped(data: PhotoData, opts: SaveOptions = SaveOptions()): String? {
         with(context) {
             val resolver = contentResolver
             val name = if (opts.colorSchemeName.isNotEmpty()) {
@@ -65,7 +65,7 @@ class ImageSaver(private val context: Context) {
             val currentTime = System.currentTimeMillis()
 
             val srcPath = if (data.originalPath.isNotEmpty()) data.originalPath else data.path
-            val src = BitmapFactory.decodeFile(srcPath) ?: return false
+            val src = BitmapFactory.decodeFile(srcPath) ?: return null
             val scaled = if (opts.scale != 1) scaleBitmap(src, opts.scale, opts.smooth) else src
             val filtered = applyFilterIfNeeded(scaled, opts.filter)
 
@@ -79,7 +79,7 @@ class ImageSaver(private val context: Context) {
                     put(MediaStore.Images.Media.DATE_ADDED, currentTime / 1000)
                 }
                 val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
-                    ?: return false
+                    ?: return null
 
                 return try {
                     resolver.openOutputStream(uri)?.use { out: OutputStream ->
@@ -100,10 +100,10 @@ class ImageSaver(private val context: Context) {
                         put(MediaStore.Images.Media.IS_PENDING, 0)
                     }, null, null)
                     cleanupBitmaps(src, scaled, filtered)
-                    true
+                    uri.toString()
                 } catch (t: Throwable) {
                     t.printStackTrace()
-                    false
+                    null
                 }
             } else {
                 // Legacy (API <= 28)
@@ -141,10 +141,10 @@ class ImageSaver(private val context: Context) {
                     MediaScannerConnection.scanFile(context, arrayOf(imageFile.absolutePath), null, null)
 
                     cleanupBitmaps(src, scaled, filtered)
-                    true
+                    imageFile.absolutePath
                 } catch (t: Throwable) {
                     t.printStackTrace()
-                    false
+                    null
                 }
             }
         }

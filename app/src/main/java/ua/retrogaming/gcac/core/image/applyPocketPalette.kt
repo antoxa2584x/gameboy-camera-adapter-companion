@@ -38,3 +38,27 @@ fun applyPocketPalette(
     out.setPixels(px, 0, w, 0, 0, w, h)
     return out
 }
+
+fun upscaleBitmapNearest(src: Bitmap, scale: Int): Bitmap {
+    if (scale <= 1) return src
+    val w = src.width
+    val h = src.height
+    val outW = w * scale
+    val outH = h * scale
+    val out = Bitmap.createBitmap(outW, outH, Bitmap.Config.ARGB_8888)
+    val srcPixels = IntArray(w * h)
+    src.getPixels(srcPixels, 0, w, 0, 0, w, h)
+    val outPixels = IntArray(outW * outH)
+
+    for (y in 0 until outH) {
+        val srcY = y / scale
+        val srcRowOffset = srcY * w
+        val outRowOffset = y * outW
+        for (x in 0 until outW) {
+            val srcX = x / scale
+            outPixels[outRowOffset + x] = srcPixels[srcRowOffset + srcX]
+        }
+    }
+    out.setPixels(outPixels, 0, outW, 0, 0, outW, outH)
+    return out
+}
