@@ -10,6 +10,8 @@ import android.hardware.usb.UsbManager
 import android.os.Build
 import android.util.Log
 import com.chibatching.kotpref.bulk
+import com.hoho.android.usbserial.driver.CdcAcmSerialDriver
+import com.hoho.android.usbserial.driver.ProbeTable
 import com.hoho.android.usbserial.driver.UsbSerialDriver
 import com.hoho.android.usbserial.driver.UsbSerialPort
 import com.hoho.android.usbserial.driver.UsbSerialProber
@@ -38,8 +40,15 @@ class DiscoveryService(private val context: Context, private val serialHelper: S
         connectToDevice()
     }
 
+    private fun getCustomProber(): UsbSerialProber {
+        val customTable = UsbSerialProber.getDefaultProbeTable()
+        // Add support for GameBoy Camera Adapter (VID 0xCafe, PID 0x4021)
+        customTable.addProduct(0xCafe, 0x4021, CdcAcmSerialDriver::class.java)
+        return UsbSerialProber(customTable)
+    }
+
     private fun connectToDevice() {
-        val drivers = UsbSerialProber.getDefaultProber().findAllDrivers(manager)
+        val drivers = getCustomProber().findAllDrivers(manager)
         if (drivers.isEmpty()) return
 
         // Prefer VID/PID (replace with your actual IDs)
@@ -68,7 +77,7 @@ class DiscoveryService(private val context: Context, private val serialHelper: S
     }
 
     private fun openIfDriverFound(device: UsbDevice) {
-        val driver = UsbSerialProber.getDefaultProber().probeDevice(device) ?: return
+        val driver = getCustomProber().probeDevice(device) ?: return
         openWithDriver(driver)
     }
 
