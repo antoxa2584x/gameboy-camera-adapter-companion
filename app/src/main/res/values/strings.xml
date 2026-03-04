@@ -10,7 +10,7 @@
     <string name="save_error">Error saving photo</string>
     <string name="is_printing">Printing…</string>
     <string name="connect_adapter">Connect your Adapter</string>
-    <string name="min_adapter_version">min version 1.4.7</string>
+    <string name="min_adapter_version">min version 1.4.8</string>
     <string name="firmware_update_available">Firmware update\navailable: v%1$s</string>
     <string name="update_available">Update Available!</string>
     <string name="new_version_available">A new version v%1$s is available.</string>

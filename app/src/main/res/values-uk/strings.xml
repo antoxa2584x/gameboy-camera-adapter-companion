@@ -10,7 +10,7 @@
     <string name="save_error">Помилка збереження фото</string>
     <string name="is_printing">Друкується…</string>
     <string name="connect_adapter">Підключіть адаптер</string>
-    <string name="min_adapter_version">мін. версія 1.4.7</string>
+    <string name="min_adapter_version">мін. версія 1.4.8</string>
     <string name="firmware_update_available">Доступне оновлення\nпрошивки: v%1$s</string>
     <string name="update_available">Доступне оновлення!</string>
     <string name="new_version_available">Доступна нова версія v%1$s.</string>
