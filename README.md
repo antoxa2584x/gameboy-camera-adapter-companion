@@ -36,9 +36,9 @@ To use this app, you need a compatible hardware adapter:
 
 ## 📦 Installation
 
-1. Clone this repository.
-2. Open the project in **Android Studio (Ladybug or newer)**.
-3. Build and install the APK on your Android device (Minimum SDK: 24 / Android 7.0).
+1. Download the latest APK from the [Releases](https://github.com/antoxa2584x/gameboy-camera-adapter-companion/releases/) page.
+2. Install the APK on your Android device (Minimum SDK: 24 / Android 7.0).
+3. Alternatively, you can clone this repository and build the project in **Android Studio (Ladybug or newer)**.
 
 ## 🎮 How to Use
 
