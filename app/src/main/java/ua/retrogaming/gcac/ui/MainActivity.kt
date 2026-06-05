@@ -6,10 +6,10 @@ import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
@@ -50,7 +50,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -74,29 +73,27 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.toColorInt
 import androidx.core.net.toUri
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
-import com.chibatching.kotpref.livedata.asLiveData
+import org.koin.androidx.viewmodel.ext.android.viewModel
 import ua.retrogaming.gcac.R
 import ua.retrogaming.gcac.data.prefs.DeviceData
-import ua.retrogaming.gcac.data.prefs.ImageCache
-import ua.retrogaming.gcac.data.prefs.UpdateCheckData
+import ua.retrogaming.gcac.data.repository.UpdateRepository
 import ua.retrogaming.gcac.ui.theme.BackgroundColor
 import ua.retrogaming.gcac.ui.theme.CameraAdapterCompanionTheme
 import ua.retrogaming.gcac.ui.theme.DarkRed
 import ua.retrogaming.gcac.ui.theme.PressStart2P
 import ua.retrogaming.gcac.ui.theme.SecondaryBackgroundColor
-import ua.retrogaming.gcac.ui.view.GalleryView
+import ua.retrogaming.gcac.ui.view.GalleryActionButtons
 import ua.retrogaming.gcac.ui.view.ImagePopup
+import ua.retrogaming.gcac.ui.view.PrintScreen
+import ua.retrogaming.gcac.ui.view.PrintingGallery
 import ua.retrogaming.gcac.ui.view.SettingsPopup
 import java.util.Locale
 
 class MainActivity : ComponentActivity() {
-    val connected = DeviceData.asLiveData(DeviceData::deviceConnected)
-    val updateAvailable = UpdateCheckData.asLiveData(UpdateCheckData::isUpdateAvailable)
-    val isPrinting = ImageCache.asLiveData(ImageCache::isPrinting)
-    val currentPhoto = ImageCache.asLiveData(ImageCache::currentPhoto)
-    val ledStatus = DeviceData.asLiveData(DeviceData::ledStatus)
-    val recentCache = ImageCache.asLiveData(ImageCache::photos)
+
+    private val viewModel: MainViewModel by viewModel()
 
     private var onPermissionResult: ((Boolean) -> Unit)? = null
 
@@ -137,7 +134,6 @@ class MainActivity : ComponentActivity() {
         updateLocale(DeviceData.language)
         super.onCreate(savedInstanceState)
 
-
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.dark(
                 Color.Transparent.toArgb()
@@ -148,156 +144,294 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             CameraAdapterCompanionTheme {
-                val isLandscape = isLandscape()
+                val state by viewModel.uiState.collectAsStateWithLifecycle()
 
-                val led by ledStatus.observeAsState(DeviceData.ledStatus)
-                var ledModalOpen by remember { mutableStateOf(false) }
+                MainEffects(state)
 
-                LaunchedEffect(Unit) {
-                    DeviceData.asLiveData(DeviceData::language).observe(this@MainActivity) { newLang ->
-                        val currentLocale = resources.configuration.locales[0].language
-                        if (newLang != null && newLang != currentLocale) {
-                            updateLocale(newLang)
-                            recreate()
-                        }
-                    }
-                }
+                MainScreen(state)
+            }
+        }
+    }
 
-                val pathsSet by recentCache.observeAsState(initial = ImageCache.photos)
-                val photoSubscription by currentPhoto.observeAsState(ImageCache.currentPhoto)
-                val paths = pathsSet.sortedByDescending { it.created }
-                var showDeleteAllDialog by remember { mutableStateOf(false) }
-                var fabExpanded by remember { mutableStateOf(false) }
-
-                val anyPopupOpen = (ledModalOpen && led != null) || photoSubscription != null
-
-                if (anyPopupOpen) {
-                    BackHandler {
-                        if (photoSubscription != null) {
-                            ImageCache.currentPhoto = null
-                        } else if (ledModalOpen) {
-                            ledModalOpen = false
-                        }
-                    }
-                }
-
-                if (ledModalOpen && led == null) {
-                    ledModalOpen = false
-                }
-
-                if (showDeleteAllDialog) {
-                    AlertDialog(
-                        onDismissRequest = { showDeleteAllDialog = false },
-                        title = { Text(stringResource(R.string.remove_confirm_title), color = Color.White) },
-                        text = { Text(stringResource(R.string.remove_all_confirm_msg), color = Color.White) },
-                        confirmButton = {
-                            TextButton(onClick = {
-                                ImageCache.removeAll()
-                                showDeleteAllDialog = false
-                            }) {
-                                Text(stringResource(R.string.confirm), color = DarkRed)
-                            }
-                        },
-                        dismissButton = {
-                            TextButton(onClick = { showDeleteAllDialog = false }) {
-                                Text(stringResource(R.string.cancel), color = Color.White)
-                            }
-                        },
-                        containerColor = BackgroundColor
-                    )
-                }
-
-                Scaffold(
-                    modifier = Modifier.fillMaxSize(),
-                    containerColor = MaterialTheme.colorScheme.background,
-                    floatingActionButton = {
-                        if (paths.isNotEmpty() && !anyPopupOpen) {
-                            Column(
-                                modifier = Modifier.padding(bottom = 32.dp, end = 16.dp),
-                                horizontalAlignment = Alignment.End,
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                AnimatedVisibility(
-                                    visible = fabExpanded,
-                                    enter = fadeIn() + expandVertically(),
-                                    exit = fadeOut() + shrinkVertically()
-                                ) {
-                                    GalleryView().ActionButtons(
-                                        paths = paths,
-                                        onDeleteAllRequest = {
-                                            showDeleteAllDialog = true
-                                            fabExpanded = false
-                                        }
-                                    )
-                                }
-
-                                FloatingActionButton(
-                                    onClick = { fabExpanded = !fabExpanded },
-                                    containerColor = SecondaryBackgroundColor,
-                                    contentColor = Color.White,
-                                    shape = CircleShape
-                                ) {
-                                    Icon(
-                                        imageVector = if (fabExpanded) Icons.Default.Close else Icons.Default.Menu,
-                                        contentDescription = "Menu"
-                                    )
-                                }
-                            }
-                        }
-                    }
-                ) { paddingValues ->
-                    val bottomPadding = paddingValues.calculateBottomPadding()
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(top = 16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Box(
-                            Modifier.fillMaxWidth(), contentAlignment = Alignment.TopEnd
-                        ) {
-                            if (led != null) {
-                                Box(
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .padding(top = 36.dp, end = 10.dp),
-                                    contentAlignment = Alignment.CenterEnd
-                                ) {
-                                    LedStatus(led?.hex) {
-                                        ledModalOpen = true
-                                    }
-                                }
-                            }
-
-                            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                                AsyncImage(
-                                    modifier = Modifier
-                                        .fillMaxWidth(if (!isLandscape) 0.7f else 0.3f)
-                                        .padding(
-                                            top = if (!isLandscape) 48.dp else 20.dp, bottom = 10.dp
-                                        ),
-                                    model = "file:///android_asset/logo.webp",
-                                    contentDescription = stringResource(R.string.app_name),
-                                    contentScale = ContentScale.Fit
-                                )
-                            }
-                        }
-
-                        ConnectDevice()
-
-                        GalleryView().PrintingGallery(isLandscape, bottomPadding)
-                    }
-
-                    if (ledModalOpen) SettingsPopup().Render({ ledModalOpen = false })
-
-                    if (photoSubscription != null) {
-                        ImagePopup().Render(photoSubscription)
-                    }
-
-                    ProgressIndicator()
+    /** One-shot effects: toasts and locale changes. */
+    @Composable
+    private fun MainEffects(state: MainUiState) {
+        LaunchedEffect(Unit) {
+            viewModel.events.collect { event ->
+                if (event is MainEvent.Message) {
+                    Toast.makeText(this@MainActivity, getString(event.textRes), Toast.LENGTH_SHORT)
+                        .show()
                 }
             }
         }
+
+        LaunchedEffect(state.language) {
+            val currentLocale = resources.configuration.locales[0].language
+            if (state.language != currentLocale) {
+                updateLocale(state.language)
+                recreate()
+            }
+        }
+    }
+
+    @Composable
+    private fun MainScreen(state: MainUiState) {
+        val isLandscape = isLandscape()
+
+        var ledModalOpen by remember { mutableStateOf(false) }
+        var printScreenOpen by remember { mutableStateOf(false) }
+        var showPrintUpdateDialog by remember { mutableStateOf(false) }
+        var showDeleteAllDialog by remember { mutableStateOf(false) }
+        var fabExpanded by remember { mutableStateOf(false) }
+
+        if (printScreenOpen) {
+            BackHandler { printScreenOpen = false }
+
+            PrintScreen(
+                connected = state.connected,
+                printSupported = state.printSupported,
+                printState = state.printState,
+                onPrint = viewModel::printBitmap,
+                onClose = { printScreenOpen = false }
+            )
+            return
+        }
+
+        val anyPopupOpen = (ledModalOpen && state.ledStatus != null) || state.currentPhoto != null
+
+        if (anyPopupOpen) {
+            BackHandler {
+                if (state.currentPhoto != null) {
+                    viewModel.closePhoto()
+                } else if (ledModalOpen) {
+                    ledModalOpen = false
+                }
+            }
+        }
+
+        if (ledModalOpen && state.ledStatus == null) {
+            ledModalOpen = false
+        }
+
+        if (showPrintUpdateDialog) {
+            AlertDialog(
+                onDismissRequest = { showPrintUpdateDialog = false },
+                title = {
+                    Text(stringResource(R.string.print_update_required_title), color = Color.White)
+                },
+                text = {
+                    Text(
+                        stringResource(
+                            R.string.print_update_required_msg,
+                            MainViewModel.MIN_PRINT_FIRMWARE
+                        ),
+                        color = Color.White
+                    )
+                },
+                confirmButton = {
+                    TextButton(onClick = { showPrintUpdateDialog = false }) {
+                        Text(stringResource(R.string.confirm), color = Color.Yellow)
+                    }
+                },
+                containerColor = BackgroundColor
+            )
+        }
+
+        if (showDeleteAllDialog) {
+            AlertDialog(
+                onDismissRequest = { showDeleteAllDialog = false },
+                title = { Text(stringResource(R.string.remove_confirm_title), color = Color.White) },
+                text = { Text(stringResource(R.string.remove_all_confirm_msg), color = Color.White) },
+                confirmButton = {
+                    TextButton(onClick = {
+                        viewModel.removeAll()
+                        showDeleteAllDialog = false
+                    }) {
+                        Text(stringResource(R.string.confirm), color = DarkRed)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDeleteAllDialog = false }) {
+                        Text(stringResource(R.string.cancel), color = Color.White)
+                    }
+                },
+                containerColor = BackgroundColor
+            )
+        }
+
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            containerColor = MaterialTheme.colorScheme.background,
+            floatingActionButton = {
+                if (!anyPopupOpen) {
+                    Column(
+                        modifier = Modifier.padding(bottom = 32.dp, end = 16.dp),
+                        horizontalAlignment = Alignment.End,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        AnimatedVisibility(
+                            visible = fabExpanded,
+                            enter = fadeIn() + expandVertically(),
+                            exit = fadeOut() + shrinkVertically()
+                        ) {
+                            GalleryActionButtons(
+                                showGalleryActions = state.photos.isNotEmpty(),
+                                onPrintRequest = {
+                                    // Printing needs firmware > MIN_PRINT_FIRMWARE; with no
+                                    // adapter attached the screen itself shows the connect hint
+                                    if (state.connected && !state.printSupported) {
+                                        showPrintUpdateDialog = true
+                                    } else {
+                                        printScreenOpen = true
+                                    }
+                                    fabExpanded = false
+                                },
+                                onSaveAll = {
+                                    checkStoragePermission { isGranted ->
+                                        if (isGranted) viewModel.saveAll()
+                                    }
+                                },
+                                onDeleteAllRequest = {
+                                    showDeleteAllDialog = true
+                                    fabExpanded = false
+                                }
+                            )
+                        }
+
+                        FloatingActionButton(
+                            onClick = { fabExpanded = !fabExpanded },
+                            containerColor = SecondaryBackgroundColor,
+                            contentColor = Color.White,
+                            shape = CircleShape
+                        ) {
+                            Icon(
+                                imageVector = if (fabExpanded) Icons.Default.Close else Icons.Default.Menu,
+                                contentDescription = "Menu"
+                            )
+                        }
+                    }
+                }
+            }
+        ) { paddingValues ->
+            val bottomPadding = paddingValues.calculateBottomPadding()
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = 16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Box(
+                    Modifier.fillMaxWidth(), contentAlignment = Alignment.TopEnd
+                ) {
+                    if (state.ledStatus != null) {
+                        Box(
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(top = 36.dp, end = 10.dp),
+                            contentAlignment = Alignment.CenterEnd
+                        ) {
+                            LedStatus(state.ledStatus.hex) {
+                                ledModalOpen = true
+                            }
+                        }
+                    }
+
+                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                        AsyncImage(
+                            modifier = Modifier
+                                .fillMaxWidth(if (!isLandscape) 0.7f else 0.3f)
+                                .padding(
+                                    top = if (!isLandscape) 48.dp else 20.dp, bottom = 10.dp
+                                ),
+                            model = "file:///android_asset/logo.webp",
+                            contentDescription = stringResource(R.string.app_name),
+                            contentScale = ContentScale.Fit
+                        )
+                    }
+                }
+
+                ConnectDevice(state.connected, state.firmwareUpdate)
+
+                PrintingGallery(
+                    photos = state.photos,
+                    colorScheme = state.colorScheme,
+                    isLandscape = isLandscape,
+                    onSchemeSelected = viewModel::selectColorScheme,
+                    onPhotoClick = viewModel::openPhoto,
+                    bottomPadding = bottomPadding
+                )
+            }
+
+            if (ledModalOpen && state.ledStatus != null) {
+                SettingsPopup(
+                    ledStatus = state.ledStatus,
+                    firmwareVersion = state.firmwareVersion,
+                    language = state.language,
+                    onSetLedColor = viewModel::setLedColor,
+                    onSetLanguage = viewModel::setLanguage,
+                    onSetMobileMode = viewModel::setMobileMode,
+                    onCloseClick = { ledModalOpen = false }
+                )
+            }
+
+            if (state.currentPhoto != null) {
+                ImagePopup(
+                    photo = state.currentPhoto,
+                    colorScheme = state.colorScheme,
+                    printState = state.printState,
+                    showPrint = state.printSupported,
+                    events = viewModel.events,
+                    onSave = { photo ->
+                        checkStoragePermission { isGranted ->
+                            if (isGranted) viewModel.savePhoto(photo)
+                        }
+                    },
+                    onPrint = viewModel::printPhoto,
+                    onRemove = viewModel::removePhoto,
+                    onClose = viewModel::closePhoto
+                )
+            }
+
+            ProgressIndicator(state.isBusy)
+
+            AppUpdateDialog(state.appUpdate)
+        }
+    }
+
+    @Composable
+    fun AppUpdateDialog(appUpdate: UpdateRepository.AppUpdate?) {
+        var dismissed by remember { mutableStateOf(false) }
+
+        if (appUpdate == null || appUpdate.skipped || dismissed) return
+
+        AlertDialog(
+            onDismissRequest = { dismissed = true },
+            title = { Text(stringResource(R.string.update_available), color = Color.White) },
+            text = {
+                Text(
+                    stringResource(R.string.new_version_available, appUpdate.version),
+                    color = Color.White
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    dismissed = true
+                    startActivity(Intent(Intent.ACTION_VIEW, appUpdate.releaseUrl.toUri()))
+                }) {
+                    Text(stringResource(R.string.download_update), color = Color.Yellow)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    // Don't nag again for this version
+                    viewModel.skipAppUpdate()
+                    dismissed = true
+                }) {
+                    Text(stringResource(R.string.cancel), color = Color.White)
+                }
+            },
+            containerColor = BackgroundColor
+        )
     }
 
     @Composable
@@ -341,15 +475,8 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    fun PhotoModal() {
-        // Already handled via anyPopupOpen and Scaffold content
-    }
-
-    @Composable
-    fun ProgressIndicator() {
-        val printing by isPrinting.observeAsState(ImageCache.isPrinting)
-
-        if (printing) {
+    fun ProgressIndicator(isBusy: Boolean) {
+        if (isBusy) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -376,9 +503,11 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    fun ConnectDevice(modifier: Modifier = Modifier) {
-        val connected by connected.observeAsState(DeviceData.deviceConnected)
-
+    fun ConnectDevice(
+        connected: Boolean,
+        firmwareUpdate: UpdateRepository.FirmwareUpdate?,
+        modifier: Modifier = Modifier
+    ) {
         if (!connected) {
             Column(
                 modifier = modifier.padding(6.dp),
@@ -395,23 +524,24 @@ class MainActivity : ComponentActivity() {
                     color = Color.Yellow.copy(alpha = 0.7f)
                 )
             }
-        } else {
-            UpdateAvailable()
+        } else if (firmwareUpdate != null) {
+            UpdateAvailable(firmwareUpdate)
         }
     }
 
     @Composable
-    fun UpdateAvailable(modifier: Modifier = Modifier) {
-        val updateAvailable by updateAvailable.observeAsState(UpdateCheckData.isUpdateAvailable)
-
-        if (updateAvailable) Text(
-            stringResource(R.string.firmware_update_available, UpdateCheckData.latestVersion),
+    fun UpdateAvailable(
+        firmwareUpdate: UpdateRepository.FirmwareUpdate,
+        modifier: Modifier = Modifier
+    ) {
+        Text(
+            stringResource(R.string.firmware_update_available, firmwareUpdate.version),
             modifier
                 .padding(6.dp)
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() }, indication = null
                 ) {
-                    val intent = Intent(Intent.ACTION_VIEW, UpdateCheckData.releaseUrl.toUri())
+                    val intent = Intent(Intent.ACTION_VIEW, firmwareUpdate.releaseUrl.toUri())
                     startActivity(intent)
                 },
             textAlign = TextAlign.Center,
@@ -432,5 +562,4 @@ class MainActivity : ComponentActivity() {
         val configuration = LocalConfiguration.current
         return configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
     }
-
 }
