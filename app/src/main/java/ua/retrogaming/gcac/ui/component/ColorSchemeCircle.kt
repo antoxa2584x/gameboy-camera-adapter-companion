@@ -9,10 +9,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,12 +26,11 @@ data class ColorSchemeCircle(
 @Composable
 fun ColorSchemeSelector(
     schemes: List<ColorSchemeCircle>,
+    selected: String,
     circleSize: Dp = 40.dp,
     spacing: Dp = 12.dp,
     onSchemeSelected: (ColorSchemeCircle) -> Unit
 ) {
-    var selected by remember { mutableStateOf(schemes.firstOrNull()?.name) }
-
     Row(
         modifier = Modifier.padding(16.dp),
         horizontalArrangement = Arrangement.spacedBy(spacing),
@@ -47,10 +42,7 @@ fun ColorSchemeSelector(
                 modifier = Modifier
                     .size(if (selected == scheme.name) circleSize + 4.dp else circleSize)
                     .clip(CircleShape)
-                    .clickable {
-                        selected = scheme.name
-                        onSchemeSelected(scheme)
-                    }
+                    .clickable { onSchemeSelected(scheme) }
                     .border(2.dp, Color.White, CircleShape)
             ) {
                 // Linear gradient with 4 segments

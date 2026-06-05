@@ -14,27 +14,25 @@ import androidx.compose.ui.unit.dp
 import ua.retrogaming.gcac.ui.theme.PressStart2P
 import ua.retrogaming.gcac.ui.theme.Red
 
-class CloseButton {
-
-    @Composable
-    fun Render( onClick: () -> Unit){
-        Button(onClick,
-            modifier = Modifier
-                .height(40.dp)
-                .width(40.dp),
-            contentPadding = PaddingValues(0.dp),
-            colors = ButtonColors(
-                Red,
-                Color.White,
-                Red,
-                Color.White
+@Composable
+fun CloseButton(onClick: () -> Unit) {
+    Button(
+        onClick,
+        modifier = Modifier
+            .height(40.dp)
+            .width(40.dp),
+        contentPadding = PaddingValues(0.dp),
+        colors = ButtonColors(
+            Red,
+            Color.White,
+            Red,
+            Color.White
+        )
+    ) {
+        Text(
+            "X", style = MaterialTheme.typography.labelLarge.copy(
+                fontFamily = PressStart2P
             )
-        ) {
-            Text(
-                "X", style = MaterialTheme.typography.labelLarge.copy(
-                    fontFamily = PressStart2P
-                )
-            )
-        }
+        )
     }
 }
