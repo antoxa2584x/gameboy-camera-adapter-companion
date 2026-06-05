@@ -7,14 +7,14 @@ plugins {
 
 android {
     namespace = "ua.retrogaming.gcac"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "ua.retrogaming.gcac"
         minSdk = 24
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 1
-        versionName = "1.0.3"
+        versionName = "1.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -61,17 +61,14 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.material.icons.core)
     implementation(libs.androidx.legacy.support.v4)
-    implementation(libs.androidx.lifecycle.livedata.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.fragment.ktx)
     implementation(libs.kotpref)
     implementation(libs.gson)
     implementation(libs.gson.support)
-    implementation(libs.androidx.lifecycle.livedata)
-    implementation(libs.livedata.support)
     implementation(libs.coil.compose)
-    implementation(libs.androidx.compose.runtime.livedata)
     implementation(libs.androidx.lifecycle.process)
     implementation(libs.accompanist.systemuicontroller)
     implementation(libs.androidx.exifinterface)
@@ -84,5 +81,8 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
     implementation(libs.usb.serial.for1.android)
     implementation(libs.koin.android)
+    implementation(libs.koin.androidx.compose)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
 
 }
