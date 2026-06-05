@@ -9,19 +9,28 @@ import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
 import android.os.Build
 import android.util.Log
-import com.chibatching.kotpref.bulk
 import com.hoho.android.usbserial.driver.CdcAcmSerialDriver
-import com.hoho.android.usbserial.driver.ProbeTable
 import com.hoho.android.usbserial.driver.UsbSerialDriver
 import com.hoho.android.usbserial.driver.UsbSerialPort
 import com.hoho.android.usbserial.driver.UsbSerialProber
-import ua.retrogaming.gcac.core.services.UpdateCheckService
-import ua.retrogaming.gcac.data.prefs.DeviceData
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+import ua.retrogaming.gcac.data.repository.DeviceRepository
+import ua.retrogaming.gcac.data.repository.UpdateRepository
 import ua.retrogaming.gcac.data.serial.LedSerialClient
+import ua.retrogaming.gcac.data.serial.PrintSerialClient
 import ua.retrogaming.gcac.data.serial.SerialHelper
 
 
-class DiscoveryService(private val context: Context, private val serialHelper: SerialHelper, private val ledSerialClient: LedSerialClient) :
+class DiscoveryService(
+    private val context: Context,
+    private val serialHelper: SerialHelper,
+    private val ledSerialClient: LedSerialClient,
+    private val printSerialClient: PrintSerialClient,
+    private val deviceRepository: DeviceRepository,
+    private val updateRepository: UpdateRepository,
+    private val applicationScope: CoroutineScope,
+) :
     BroadcastReceiver() {
     private val manager = context.getSystemService(Context.USB_SERVICE) as UsbManager
     private val filter = IntentFilter().apply {
@@ -63,15 +72,43 @@ class DiscoveryService(private val context: Context, private val serialHelper: S
     }
 
     private fun requestUsbPermission(device: UsbDevice) {
-        val pi = PendingIntent.getBroadcast(
-            context, 0, Intent(ACTION_USB_PERMISSION), PendingIntent.FLAG_IMMUTABLE
-        )
+        // Explicit intent (Android 14+ drops implicit ones for NOT_EXPORTED receivers)
+        // and MUTABLE so the system can attach EXTRA_PERMISSION_GRANTED / EXTRA_DEVICE —
+        // with FLAG_IMMUTABLE the grant result always reads as denied.
+        val intent = Intent(ACTION_USB_PERMISSION).setPackage(context.packageName)
+        val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            PendingIntent.FLAG_MUTABLE
+        } else {
+            0
+        }
+        val pi = PendingIntent.getBroadcast(context, 0, intent, flags)
+
+        // One-shot receiver, separate from `this` so unregistering it
+        // doesn't kill the attach/detach listener
+        val permissionReceiver = object : BroadcastReceiver() {
+            override fun onReceive(ctx: Context?, result: Intent?) {
+                try {
+                    context.unregisterReceiver(this)
+                } catch (_: IllegalArgumentException) {
+                    // already unregistered
+                }
+                val granted =
+                    result?.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false) == true
+                val grantedDevice: UsbDevice? = result?.getParcelableExtra(UsbManager.EXTRA_DEVICE)
+                if (granted && grantedDevice != null) {
+                    openIfDriverFound(grantedDevice)
+                } else {
+                    Log.d("DiscoveryService", "USB permission denied for $grantedDevice")
+                }
+            }
+        }
+
         val filter = IntentFilter(ACTION_USB_PERMISSION)
         if (Build.VERSION.SDK_INT >= 33) {
-            context.registerReceiver(this, filter, Context.RECEIVER_NOT_EXPORTED)
+            context.registerReceiver(permissionReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
         } else {
             @Suppress("UnspecifiedRegisterReceiverFlag")
-            context.registerReceiver(this, filter)
+            context.registerReceiver(permissionReceiver, filter)
         }
         manager.requestPermission(device, pi)  // register BEFORE this call
     }
@@ -97,41 +134,32 @@ class DiscoveryService(private val context: Context, private val serialHelper: S
             loadLedStatus()
         }
 
-        DeviceData.bulk  {
-            deviceVersion = driver.device.productName?.substringAfter("[", "")
-                ?.substringBefore("]", "")
-                .takeIf { it?.isNotEmpty() ?: false }
-            deviceConnected = true
-        }
+        printSerialClient.setDevicePort(port)
 
-        UpdateCheckService().checkUpdate()
+        val firmwareVersion = driver.device.productName
+            ?.substringAfter("[", "")
+            ?.substringBefore("]", "")
+            ?.takeIf { it.isNotEmpty() }
+
+        deviceRepository.setConnected(true, firmwareVersion)
+
+        applicationScope.launch {
+            updateRepository.checkFirmwareUpdate(firmwareVersion ?: "0.0.0")
+        }
     }
 
     override fun onReceive(context: Context?, intent: Intent?) {
-        intent?.let {
-            when (intent.action) {
-                UsbManager.ACTION_USB_DEVICE_ATTACHED -> {
-                    connectToDevice() }
-                UsbManager.ACTION_USB_DEVICE_DETACHED -> {
-                    disconnectDevice() }
-                ACTION_USB_PERMISSION -> { val device: UsbDevice? = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE)
-                    val granted = intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)
-                    if (granted && device != null) {
-                        // Open now (no need to call startObserve again)
-                        openIfDriverFound(device)
-                    } else {
-                        Log.d("DiscoveryService", "USB permission denied for $device")
-                    }
-                    // one-shot receiver: unregister now
-                    this.context.unregisterReceiver(this) }
-            }
+        when (intent?.action) {
+            UsbManager.ACTION_USB_DEVICE_ATTACHED -> connectToDevice()
+            UsbManager.ACTION_USB_DEVICE_DETACHED -> disconnectDevice()
         }
-
     }
 
     fun disconnectDevice() {
-        DeviceData.deviceConnected = false
+        deviceRepository.setConnected(false)
         serialHelper.stopListening()
+        printSerialClient.clearDevicePort()
+        ledSerialClient.clearDevicePort()
     }
 
     companion object {
