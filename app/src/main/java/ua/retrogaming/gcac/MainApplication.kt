@@ -4,16 +4,22 @@ import android.app.Application
 import com.chibatching.kotpref.Kotpref
 import com.chibatching.kotpref.gsonpref.gson
 import com.google.gson.Gson
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
+import ua.retrogaming.gcac.data.repository.UpdateRepository
 import ua.retrogaming.gcac.data.serial.services.DiscoveryService
+import ua.retrogaming.gcac.di.APPLICATION_SCOPE
 import ua.retrogaming.gcac.di.appModule
 
 class MainApplication : Application() {
 
     private val discoveryService: DiscoveryService by inject()
+    private val updateRepository: UpdateRepository by inject()
+    private val applicationScope: CoroutineScope by inject(APPLICATION_SCOPE)
 
     override fun onCreate() {
         super.onCreate()
@@ -28,5 +34,16 @@ class MainApplication : Application() {
         }
 
         discoveryService.init()
+
+        applicationScope.launch {
+            updateRepository.checkAppUpdate(currentAppVersion())
+        }
+    }
+
+    private fun currentAppVersion(): String = try {
+        @Suppress("DEPRECATION")
+        packageManager.getPackageInfo(packageName, 0).versionName ?: ""
+    } catch (_: Exception) {
+        ""
     }
 }

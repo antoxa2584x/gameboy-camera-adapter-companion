@@ -1,12 +1,11 @@
 package ua.retrogaming.gcac.data.prefs
 
 import com.chibatching.kotpref.KotprefModel
-import com.chibatching.kotpref.gsonpref.gsonNullablePref
-import ua.retrogaming.gcac.model.LedStatus
 
+/**
+ * Persisted device-related settings. Session state (connection, LED, version)
+ * lives in [ua.retrogaming.gcac.data.repository.DeviceRepository].
+ */
 object DeviceData : KotprefModel() {
-    var deviceConnected by booleanPref(false)
-    var ledStatus by gsonNullablePref<LedStatus>(null)
-    var deviceVersion by nullableStringPref("")
     var language by stringPref("en")
 }

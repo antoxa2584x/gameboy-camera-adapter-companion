@@ -6,21 +6,22 @@ import android.util.Log
 import com.google.gson.Gson
 import com.hoho.android.usbserial.driver.UsbSerialPort
 import com.hoho.android.usbserial.util.SerialInputOutputManager
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import ua.retrogaming.gcac.core.GbcaConverter
-import ua.retrogaming.gcac.data.image.ImageSaver
-import ua.retrogaming.gcac.data.prefs.DeviceData
-import ua.retrogaming.gcac.data.prefs.ImageCache
+import ua.retrogaming.gcac.data.repository.DeviceRepository
+import ua.retrogaming.gcac.data.repository.PhotoRepository
 import ua.retrogaming.gcac.model.LedStatus
 import ua.retrogaming.gcac.util.linesFromBuffer
 import java.io.File
 import java.io.FileOutputStream
 
-class SerialHelper(private val context: Context) : KoinComponent {
+class SerialHelper(
+    private val context: Context,
+    private val printSerialClient: PrintSerialClient,
+    private val photoRepository: PhotoRepository,
+    private val deviceRepository: DeviceRepository,
+) {
 
     private var ioManager: SerialInputOutputManager? = null
-    private val imageHelper: ImageSaver by inject()
 
     private val sb = StringBuilder()
     private val converter = GbcaConverter()
@@ -42,7 +43,7 @@ class SerialHelper(private val context: Context) : KoinComponent {
         frames.forEach { frame ->
             try {
                 val originalPath = saveFrameToCache(frame.originalBitmap, "original")
-                ImageCache.addPhotos(path = originalPath.absolutePath, originalPath = originalPath.absolutePath)
+                photoRepository.addPhoto(path = originalPath.absolutePath, originalPath = originalPath.absolutePath)
                 frame.originalBitmap.recycle()
             } catch (e: Exception) {
                 Log.e("USB", "Error processing frame", e)
@@ -62,7 +63,6 @@ class SerialHelper(private val context: Context) : KoinComponent {
         ioManager = SerialInputOutputManager(port, object : SerialInputOutputManager.Listener {
             override fun onNewData(data: ByteArray) {
                 val text = data.toString(Charsets.UTF_8)
-                // Log.d("USB", text) // Reduced noise
 
                 sb.append(text)
 
@@ -70,34 +70,38 @@ class SerialHelper(private val context: Context) : KoinComponent {
                 val lines = sb.linesFromBuffer()
                 if (lines.isEmpty()) return
 
+                var receiving = collectedLines.isNotEmpty()
                 for (line in lines) {
                     val trimmed = line.trim()
                     if (trimmed.isEmpty()) continue
 
-                    // Log.v("USB", "Line: $trimmed")
-
                     if (trimmed.contains("GBCA_PHOTO_TRANSFER")) {
-                        ImageCache.isPrinting = true
+                        photoRepository.setBusy(true)
+                        receiving = true
                         collectedLines.clear()
                         collectedLines.add(trimmed)
                         continue
                     }
 
+                    // Printer protocol responses (PRINT_QUEUED / PRINT_ERR / {"printer":N})
+                    if (printSerialClient.onSerialLine(trimmed)) continue
+
                     if (ledStatus.matches(trimmed + "\n")) {
                         try {
-                            DeviceData.ledStatus = Gson().fromJson(trimmed, LedStatus::class.java)
+                            deviceRepository.setLedStatus(Gson().fromJson(trimmed, LedStatus::class.java))
                         } catch (e: Exception) {
                             Log.e("USB", "Failed to parse LED status: $trimmed", e)
                         }
                         continue
                     }
 
-                    if (ImageCache.isPrinting) {
+                    if (receiving) {
                         collectedLines.add(trimmed)
                         if (trimmed.contains("DONE")) {
                             handleLines(collectedLines.toList())
                             collectedLines.clear()
-                            ImageCache.isPrinting = false
+                            receiving = false
+                            photoRepository.setBusy(false)
                         }
                     }
                 }
@@ -105,7 +109,7 @@ class SerialHelper(private val context: Context) : KoinComponent {
 
             override fun onRunError(e: Exception) {
                 Log.e("USB", "Runner stopped.", e)
-                ImageCache.isPrinting = false
+                photoRepository.setBusy(false)
             }
         })
 
@@ -119,8 +123,7 @@ class SerialHelper(private val context: Context) : KoinComponent {
         sb.setLength(0)
         collectedLines.clear()
 
-        DeviceData.deviceConnected = false
-        DeviceData.ledStatus = null
-        ImageCache.isPrinting = false
+        deviceRepository.setConnected(false)
+        photoRepository.setBusy(false)
     }
 }
