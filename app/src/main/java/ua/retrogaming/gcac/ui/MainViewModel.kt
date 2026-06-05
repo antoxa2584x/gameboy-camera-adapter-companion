@@ -279,6 +279,6 @@ class MainViewModel(
 
     companion object {
         /** Printing over the adapter requires firmware newer than this. */
-        const val MIN_PRINT_FIRMWARE = "2.0.1"
+        const val MIN_PRINT_FIRMWARE = "2.0.2"
     }
 }
