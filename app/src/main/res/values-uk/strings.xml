@@ -29,4 +29,24 @@
     <string name="remove_all_confirm_msg">Ви впевнені, що хочете видалити всі фото?</string>
     <string name="confirm">Підтвердити</string>
     <string name="cancel">Скасувати</string>
+    <string name="print_photo">Друкувати</string>
+    <string name="print_popup_title">Друк фото</string>
+    <string name="choose_photo">Вибрати фото</string>
+    <string name="print_pick_hint">Виберіть фото з вашого пристрою,\nщоб надрукувати його на Game Boy Printer</string>
+    <string name="image_load_error">Не вдалося завантажити зображення</string>
+    <string name="print_exposure">Експозиція: %1$d%%</string>
+    <string name="print_crop_hint">Перетягуйте, щоб посунути, зводьте пальці, щоб масштабувати</string>
+    <string name="print_update_required_title">Потрібне оновлення прошивки</string>
+    <string name="print_update_required_msg">Для друку потрібна прошивка адаптера новіша за v%1$s. Будь ласка, оновіть прошивку адаптера за допомогою ПК.</string>
+    <string name="print_sending">Надсилання…</string>
+    <string name="print_in_progress">Друк фото…</string>
+    <string name="print_done">Фото надруковано</string>
+    <string name="print_error">Помилка друку</string>
+    <string name="printer_disconnected">Принтер не підключено</string>
+    <string name="mobile_mode_title">Сумісність з мобільними</string>
+    <string name="mobile_mode_android">Android</string>
+    <string name="mobile_mode_ios">iOS</string>
+    <string name="mobile_mode_hint">Увага: зміна цього налаштування перезавантажить адаптер</string>
+    <string name="mobile_mode_confirm_msg">Перемкнути адаптер у режим iOS (лише веб)? Адаптер перезавантажиться та від\'єднається від цього застосунку. Повернутися назад можна через веб-сторінку адаптера.</string>
+    <string name="adapter_rebooting">Адаптер перезавантажується…</string>
 </resources>

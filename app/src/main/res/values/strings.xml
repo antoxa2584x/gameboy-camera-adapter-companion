@@ -29,4 +29,24 @@
     <string name="remove_all_confirm_msg">Are you sure you want to remove all photos?</string>
     <string name="confirm">Confirm</string>
     <string name="cancel">Cancel</string>
+    <string name="print_photo">Print</string>
+    <string name="print_popup_title">Print Photo</string>
+    <string name="choose_photo">Choose Photo</string>
+    <string name="print_pick_hint">Pick a photo from your device\nto print it on the Game Boy Printer</string>
+    <string name="image_load_error">Failed to load image</string>
+    <string name="print_exposure">Exposure: %1$d%%</string>
+    <string name="print_crop_hint">Drag to move, pinch to zoom the crop</string>
+    <string name="print_update_required_title">Firmware Update Required</string>
+    <string name="print_update_required_msg">Printing requires adapter firmware newer than v%1$s. Please update the adapter firmware using a PC.</string>
+    <string name="print_sending">Sending…</string>
+    <string name="print_in_progress">Printing photo…</string>
+    <string name="print_done">Photo printed</string>
+    <string name="print_error">Print error</string>
+    <string name="printer_disconnected">Printer not connected</string>
+    <string name="mobile_mode_title">Mobile Compatibility</string>
+    <string name="mobile_mode_android">Android</string>
+    <string name="mobile_mode_ios">iOS</string>
+    <string name="mobile_mode_hint">Note: Changing this will reboot the adapter</string>
+    <string name="mobile_mode_confirm_msg">Switch the adapter to iOS (web only) mode? The adapter will reboot and disconnect from this app. You can switch back via the adapter\'s web page.</string>
+    <string name="adapter_rebooting">Adapter is rebooting…</string>
 </resources>
