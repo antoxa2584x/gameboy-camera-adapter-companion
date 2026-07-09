@@ -1,4 +1,4 @@
-# GameBoy Camera Adapter Companion (GCAC)
+# GameBoy Camera Companion
 
 A modern Android companion application for the [RP2040-based GameBoy Camera Adapter](https://github.com/antoxa2584x/gameboy-camera-adapter) (my fork of the original project). This app allows you to preview, capture, and manage photos from your GameBoy Camera directly on your Android device via USB-Serial — and print photos (including any image from your phone) on a real GameBoy Printer.
 

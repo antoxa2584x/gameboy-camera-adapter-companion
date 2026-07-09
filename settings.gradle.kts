@@ -22,6 +22,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Camera Adapter Companion"
+rootProject.name = "GameBoy Camera Companion"
 include(":app")
  

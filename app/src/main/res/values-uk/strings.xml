@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Camera Adapter Companion</string>
+    <string name="app_name">GameBoy Camera Companion</string>
     <string name="adapter_version">Версія адаптера: v%1$s</string>
     <string name="choose_led_color">Виберіть колір LED</string>
     <string name="led_color_hint">Якщо колір не відповідає очікуваному, перемкніть це</string>
