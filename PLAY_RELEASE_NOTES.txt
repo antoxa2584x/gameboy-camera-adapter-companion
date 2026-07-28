@@ -1,0 +1,73 @@
+====================================================================
+GBCam Companion — Google Play release notes
+Version 1.1.0 (versionCode 10)
+====================================================================
+
+Generated from: a7938e7..7db11f1  (16 commits)
+Play limit    : 500 characters per language (both blocks below are within it)
+
+Paste each block into Play Console -> Release -> "What's new in this release",
+under the matching language. Do not include the dashed separator lines.
+
+
+--------------------------------------------------------------------
+en-US  (434/500 characters)
+--------------------------------------------------------------------
+New in this version
+
+• The app is now called GBCam Companion.
+• Announcements: get notified about app and adapter firmware news.
+• App updates now arrive through Google Play.
+
+Fixed
+• A crash when connecting the adapter over USB.
+• Photos disappearing from the gallery.
+• Failed saves leaving empty entries in your gallery.
+• The minimum adapter firmware required for printing.
+
+Crash reporting was added so problems get fixed faster.
+--------------------------------------------------------------------
+
+
+--------------------------------------------------------------------
+uk  (406/500 characters)
+--------------------------------------------------------------------
+Що нового
+
+• Додаток тепер називається GBCam Companion.
+• Оголошення: новини про додаток і прошивку адаптера.
+• Оновлення додатка надходять через Google Play.
+
+Виправлено
+• Збій під час підключення адаптера через USB.
+• Зникнення фото з галереї.
+• Порожні записи в галереї після невдалого збереження.
+• Мінімальну версію прошивки, потрібну для друку.
+
+Додано звіти про збої, щоб швидше виправляти проблеми.
+--------------------------------------------------------------------
+
+
+====================================================================
+APPENDIX — commits in range deliberately omitted
+====================================================================
+
+These have no user-visible effect, so they are not in the notes above:
+
+  c388fdd  release signing configuration
+  309ec92  line-ending normalisation
+  da20eb5  ignore Firebase credentials / local tool settings
+  125ca1c  versionCode, USB-host declaration, release logging
+  f66de6e  dependency updates (Kotlin, core-ktx, colorpicker, usb-serial)
+  a72973d  README build instructions
+  e2325cb  FCM test-send script
+  7db11f1  debug-only FCM token logging
+
+Note on the app rename: the store listing title must also be changed from
+"GameBoy Camera Companion" to "GBCam Companion" in Play Console. Updating the
+notes alone leaves the two inconsistent.
+
+Note on new data collection: this release adds Firebase Analytics, Crashlytics
+and Cloud Messaging. The Data safety form must declare app-interaction data,
+crash logs and device identifiers, and the privacy policy must cover them,
+before this build can be rolled out.
