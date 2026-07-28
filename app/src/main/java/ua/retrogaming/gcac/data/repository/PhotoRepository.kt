@@ -3,6 +3,7 @@ package ua.retrogaming.gcac.data.repository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import ua.retrogaming.gcac.data.image.PhotoFileStore
 import ua.retrogaming.gcac.data.prefs.ImageCache
 import ua.retrogaming.gcac.model.PhotoData
 
@@ -13,10 +14,20 @@ import ua.retrogaming.gcac.model.PhotoData
  * transient state (transfer-in-progress, opened photo) is in-memory only so it
  * can never get stuck across process restarts.
  */
-class PhotoRepository {
+class PhotoRepository(private val fileStore: PhotoFileStore) {
 
-    private val _photos = MutableStateFlow(ImageCache.photos)
+    /**
+     * Drops entries whose backing file is gone. Earlier builds stored frames in
+     * `cacheDir`, so upgrading users can carry persisted paths the OS has already
+     * wiped; showing them as blank tiles forever is worse than forgetting them.
+     */
+    private val _photos = MutableStateFlow(ImageCache.photos.filter(fileStore::exists))
     val photos: StateFlow<List<PhotoData>> = _photos.asStateFlow()
+
+    init {
+        // Persist the prune so it only ever runs against real leftovers.
+        if (_photos.value.size != ImageCache.photos.size) ImageCache.photos = _photos.value
+    }
 
     private val _colorScheme = MutableStateFlow(ImageCache.colorScheme)
     val colorScheme: StateFlow<String> = _colorScheme.asStateFlow()
@@ -35,11 +46,14 @@ class PhotoRepository {
 
     fun removePhoto(photo: PhotoData) {
         update { it - photo }
+        fileStore.delete(photo)
         if (_currentPhoto.value == photo) _currentPhoto.value = null
     }
 
     fun removeAll() {
+        val removed = _photos.value
         update { emptyList() }
+        removed.forEach(fileStore::delete)
         _currentPhoto.value = null
     }
 

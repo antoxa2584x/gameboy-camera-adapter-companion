@@ -9,6 +9,7 @@ import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import ua.retrogaming.gcac.data.analytics.AnalyticsClient
 import ua.retrogaming.gcac.data.image.ImageSaver
+import ua.retrogaming.gcac.data.image.PhotoFileStore
 import ua.retrogaming.gcac.data.repository.DeviceRepository
 import ua.retrogaming.gcac.data.repository.PhotoRepository
 import ua.retrogaming.gcac.data.repository.UpdateRepository
@@ -27,15 +28,18 @@ val appModule = module {
     // Telemetry
     single { AnalyticsClient(androidContext()) }
 
+    // Storage
+    single { PhotoFileStore(androidContext()) }
+
     // Repositories
     single { DeviceRepository() }
-    single { PhotoRepository() }
+    single { PhotoRepository(get()) }
     single { UpdateRepository() }
 
     // Serial clients / services
     single { LedSerialClient() }
     single { PrintSerialClient() }
-    single { SerialHelper(androidContext(), get(), get(), get()) }
+    single { SerialHelper(get(), get(), get(), get(), get()) }
     single {
         DiscoveryService(
             context = androidContext(),

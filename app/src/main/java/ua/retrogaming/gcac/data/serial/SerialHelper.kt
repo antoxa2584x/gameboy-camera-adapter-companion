@@ -1,12 +1,13 @@
 package ua.retrogaming.gcac.data.serial
 
-import android.content.Context
 import android.graphics.Bitmap
 import android.util.Log
 import com.google.gson.Gson
 import com.hoho.android.usbserial.driver.UsbSerialPort
 import com.hoho.android.usbserial.util.SerialInputOutputManager
 import ua.retrogaming.gcac.core.GbcaConverter
+import ua.retrogaming.gcac.data.analytics.AnalyticsClient
+import ua.retrogaming.gcac.data.image.PhotoFileStore
 import ua.retrogaming.gcac.data.repository.DeviceRepository
 import ua.retrogaming.gcac.data.repository.PhotoRepository
 import ua.retrogaming.gcac.model.LedStatus
@@ -15,10 +16,11 @@ import java.io.File
 import java.io.FileOutputStream
 
 class SerialHelper(
-    private val context: Context,
     private val printSerialClient: PrintSerialClient,
     private val photoRepository: PhotoRepository,
     private val deviceRepository: DeviceRepository,
+    private val fileStore: PhotoFileStore,
+    private val analytics: AnalyticsClient,
 ) {
 
     private var ioManager: SerialInputOutputManager? = null
@@ -35,6 +37,8 @@ class SerialHelper(
             converter.decodeFromLogLines(lines)
         } catch (e: Exception) {
             Log.e("USB", "Decoding failed", e)
+            analytics.breadcrumb("decode failed on ${lines.size} lines")
+            analytics.recordError("frame_decode", e)
             emptyList()
         }
         if (frames.isEmpty()) {
@@ -42,17 +46,19 @@ class SerialHelper(
         }
         frames.forEach { frame ->
             try {
-                val originalPath = saveFrameToCache(frame.originalBitmap, "original")
+                val originalPath = saveFrame(frame.originalBitmap, "original")
                 photoRepository.addPhoto(path = originalPath.absolutePath, originalPath = originalPath.absolutePath)
                 frame.originalBitmap.recycle()
+                analytics.photoReceived()
             } catch (e: Exception) {
                 Log.e("USB", "Error processing frame", e)
+                analytics.recordError("frame_write", e)
             }
         }
     }
 
-    private fun saveFrameToCache(frame: Bitmap, suffix: String): File {
-        val outFile = File(context.cacheDir, "${System.currentTimeMillis()}_$suffix.png")
+    private fun saveFrame(frame: Bitmap, suffix: String): File {
+        val outFile = fileStore.newFile(suffix)
         FileOutputStream(outFile).use { fos ->
             frame.compress(Bitmap.CompressFormat.PNG, 100, fos)
         }
@@ -109,6 +115,7 @@ class SerialHelper(
 
             override fun onRunError(e: Exception) {
                 Log.e("USB", "Runner stopped.", e)
+                analytics.recordError("serial_runner", e)
                 photoRepository.setBusy(false)
             }
         })
