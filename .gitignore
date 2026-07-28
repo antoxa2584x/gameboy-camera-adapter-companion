@@ -21,8 +21,18 @@ keystore.properties
 *.jks
 /app/release/
 
+# Python bytecode cache (scripts/)
+__pycache__/
+*.pyc
+
 # Local Claude Code settings (machine-specific tool permissions)
 .claude/settings.local.json
+
+# Firebase service-account keys used by scripts/send_test_push.py. Unlike
+# google-services.json these are real credentials — they can send push to every
+# install and reach other project APIs. Never commit one.
+*service-account*.json
+fcm-key.json
 
 # Firebase config — ties the build to a specific Firebase project and carries the
 # project's API key. Kept local; each developer supplies their own from the
