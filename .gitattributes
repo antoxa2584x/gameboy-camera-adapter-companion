@@ -1,0 +1,19 @@
+# Normalize line endings so Windows checkouts don't produce CRLF-only diffs.
+* text=auto eol=lf
+
+# Binary assets — never touch these.
+*.png binary
+*.webp binary
+*.jpg binary
+*.jpeg binary
+*.ttf binary
+*.otf binary
+*.keystore binary
+*.jks binary
+*.apk binary
+*.aab binary
+*.dm binary
+
+# Keep the Gradle wrapper batch file CRLF so cmd.exe can run it.
+*.bat text eol=crlf
+gradlew text eol=lf
