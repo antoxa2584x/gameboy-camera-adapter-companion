@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">GameBoy Camera Companion</string>
+    <string name="app_name">GBCam Companion</string>
     <string name="adapter_version">Adapter version: v%1$s</string>
     <string name="choose_led_color">Choose LED color</string>
     <string name="led_color_hint">If color not as expected, switch this</string>

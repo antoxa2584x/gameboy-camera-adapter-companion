@@ -9,6 +9,7 @@ import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
+import org.koin.core.logger.Level
 import org.koin.core.context.startKoin
 import ua.retrogaming.gcac.data.repository.UpdateRepository
 import ua.retrogaming.gcac.data.serial.services.DiscoveryService
@@ -28,7 +29,8 @@ class MainApplication : Application() {
         Kotpref.gson = Gson()
 
         startKoin {
-            androidLogger()
+            // Keep dependency-graph logging out of release logcat.
+            androidLogger(if (BuildConfig.DEBUG) Level.INFO else Level.NONE)
             androidContext(this@MainApplication)
             modules(appModule)
         }

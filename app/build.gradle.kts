@@ -23,7 +23,9 @@ android {
         applicationId = "ua.retrogaming.gcac"
         minSdk = 24
         targetSdk = 37
-        versionCode = 1
+        // Ahead of the 1.0.x/1.1.0 APKs published on GitHub (all versionCode 1) so
+        // Play can offer those sideloaded installs an upgrade.
+        versionCode = 10
         versionName = "1.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -53,10 +55,12 @@ android {
         }
     }
 
+    // Names the sideloadable APKs published on GitHub. Play ships the .aab from
+    // `bundleRelease`, which is unaffected by this.
     applicationVariants.all {
         outputs.all {
-            val output = this as com.android.build.gradle.internal.api.ApkVariantOutputImpl
-            output.outputFileName = "AdapterCompanion-${defaultConfig.versionName}.apk"
+            (this as? com.android.build.gradle.internal.api.ApkVariantOutputImpl)?.outputFileName =
+                "AdapterCompanion-${defaultConfig.versionName}.apk"
         }
     }
 
@@ -72,6 +76,8 @@ android {
     }
     buildFeatures {
         compose = true
+        // Needed for BuildConfig.DEBUG (off by default since AGP 8.0).
+        buildConfig = true
     }
 }
 
