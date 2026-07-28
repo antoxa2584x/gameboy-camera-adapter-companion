@@ -15,6 +15,7 @@ import com.hoho.android.usbserial.driver.UsbSerialPort
 import com.hoho.android.usbserial.driver.UsbSerialProber
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import ua.retrogaming.gcac.data.analytics.AnalyticsClient
 import ua.retrogaming.gcac.data.repository.DeviceRepository
 import ua.retrogaming.gcac.data.repository.UpdateRepository
 import ua.retrogaming.gcac.data.serial.LedSerialClient
@@ -29,6 +30,7 @@ class DiscoveryService(
     private val printSerialClient: PrintSerialClient,
     private val deviceRepository: DeviceRepository,
     private val updateRepository: UpdateRepository,
+    private val analytics: AnalyticsClient,
     private val applicationScope: CoroutineScope,
 ) :
     BroadcastReceiver() {
@@ -98,7 +100,7 @@ class DiscoveryService(
                 if (granted && grantedDevice != null) {
                     openIfDriverFound(grantedDevice)
                 } else {
-                    Log.d("DiscoveryService", "USB permission denied for $grantedDevice")
+                    Log.d(TAG, "USB permission denied for $grantedDevice")
                 }
             }
         }
@@ -120,12 +122,29 @@ class DiscoveryService(
 
     private fun openWithDriver(driver: UsbSerialDriver) {
         val conn = manager.openDevice(driver.device) ?: return
-        val port = driver.ports.first()
-        port.open(conn)
-        port.setParameters(115200, 8, UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE)
+        val port = driver.ports.firstOrNull() ?: run {
+            runCatching { conn.close() }
+            return
+        }
 
-        port.dtr = true   // assert Data Terminal Ready
-        port.rts = true   // optional but common
+        // Opening can fail for reasons entirely outside our control — the adapter
+        // being claimed by another process, or unplugged between the attach
+        // broadcast and here. Reached from onReceive() and from Application
+        // .onCreate(), so an escaping IOException would crash the app outright.
+        try {
+            port.open(conn)
+            port.setParameters(115200, 8, UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE)
+
+            port.dtr = true   // assert Data Terminal Ready
+            port.rts = true   // optional but common
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to open serial port", e)
+            analytics.recordError("usb_port_open", e)
+            runCatching { port.close() }
+            runCatching { conn.close() }
+            deviceRepository.setConnected(false)
+            return
+        }
 
         serialHelper.startListening(port)
 
@@ -142,6 +161,7 @@ class DiscoveryService(
             ?.takeIf { it.isNotEmpty() }
 
         deviceRepository.setConnected(true, firmwareVersion)
+        analytics.adapterConnected(firmwareVersion)
 
         applicationScope.launch {
             updateRepository.checkFirmwareUpdate(firmwareVersion ?: "0.0.0")
@@ -164,5 +184,6 @@ class DiscoveryService(
 
     companion object {
         private const val ACTION_USB_PERMISSION = "ua.retrogaming.gcac.USB_PERMISSION"
+        private const val TAG = "DiscoveryService"
     }
 }

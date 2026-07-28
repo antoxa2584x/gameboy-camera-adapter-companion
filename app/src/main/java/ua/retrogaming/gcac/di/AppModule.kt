@@ -44,6 +44,7 @@ val appModule = module {
             printSerialClient = get(),
             deviceRepository = get(),
             updateRepository = get(),
+            analytics = get(),
             applicationScope = get(APPLICATION_SCOPE),
         )
     }
