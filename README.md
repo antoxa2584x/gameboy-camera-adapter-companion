@@ -48,6 +48,14 @@ To use this app, you need a compatible hardware adapter:
 2. Install the APK on your Android device (Minimum SDK: 24 / Android 7.0).
 3. Alternatively, you can clone this repository and build the project in **Android Studio (Ladybug or newer)**.
 
+### Building from source
+
+The app uses Firebase (Analytics + Crashlytics), and `app/google-services.json` is
+deliberately not committed. The build fails without it, so before building you need to
+add your own Android app with package name `ua.retrogaming.gcac` to a
+[Firebase project](https://console.firebase.google.com/), then download its
+`google-services.json` into `app/`.
+
 ## 🎮 How to Use
 
 ### Capturing photos
