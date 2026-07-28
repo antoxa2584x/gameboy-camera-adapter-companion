@@ -75,6 +75,7 @@ import androidx.core.graphics.toColorInt
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
+import coil3.compose.rememberAsyncImagePainter
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import ua.retrogaming.gcac.R
 import ua.retrogaming.gcac.data.prefs.DeviceData
@@ -91,6 +92,16 @@ import ua.retrogaming.gcac.ui.view.PrintScreen
 import ua.retrogaming.gcac.ui.view.PrintingGallery
 import ua.retrogaming.gcac.ui.view.SettingsPopup
 import java.util.Locale
+
+/**
+ * Main-screen logo, fetched at runtime so it can be changed without shipping an
+ * app update. Coil disk-caches the result, so this costs one request per cache
+ * lifetime rather than one per launch.
+ */
+private const val LOGO_URL = "https://rgaming.com.ua/camera_adapter/assets/logo.webp"
+
+/** Bundled copy: shown while the remote one loads, and kept if it never arrives. */
+private const val LOGO_ASSET = "file:///android_asset/logo.webp"
 
 class MainActivity : ComponentActivity() {
 
@@ -365,15 +376,24 @@ class MainActivity : ComponentActivity() {
                     }
 
                     Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                        // Used for all three states, so the logo is drawn from the
+                        // bundle immediately and simply stays if the fetch fails.
+                        // Photo transfer works with no connectivity at all, so this
+                        // must never degrade to a blank gap or a layout jump.
+                        val bundledLogo = rememberAsyncImagePainter(LOGO_ASSET)
+
                         AsyncImage(
                             modifier = Modifier
                                 .fillMaxWidth(if (!isLandscape) 0.7f else 0.3f)
                                 .padding(
                                     top = if (!isLandscape) 48.dp else 20.dp, bottom = 10.dp
                                 ),
-                            model = "file:///android_asset/logo.webp",
+                            model = LOGO_URL,
                             contentDescription = stringResource(R.string.app_name),
-                            contentScale = ContentScale.Fit
+                            contentScale = ContentScale.Fit,
+                            placeholder = bundledLogo,
+                            error = bundledLogo,
+                            fallback = bundledLogo
                         )
                     }
                 }

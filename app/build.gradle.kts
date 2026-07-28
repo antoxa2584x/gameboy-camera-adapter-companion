@@ -101,6 +101,7 @@ dependencies {
     implementation(libs.gson)
     implementation(libs.gson.support)
     implementation(libs.coil.compose)
+    implementation(libs.coil.network.okhttp)
     implementation(libs.androidx.lifecycle.process)
     implementation(libs.accompanist.systemuicontroller)
     implementation(libs.androidx.exifinterface)
