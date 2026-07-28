@@ -20,3 +20,11 @@ keystore.properties
 *.keystore
 *.jks
 /app/release/
+
+# Local Claude Code settings (machine-specific tool permissions)
+.claude/settings.local.json
+
+# Firebase config — ties the build to a specific Firebase project and carries the
+# project's API key. Kept local; each developer supplies their own from the
+# Firebase Console. Note the build fails without it.
+google-services.json
