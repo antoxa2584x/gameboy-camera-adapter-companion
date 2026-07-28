@@ -7,8 +7,10 @@ import android.media.MediaScannerConnection
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
+import android.util.Log
 import androidx.core.graphics.scale
 import androidx.exifinterface.media.ExifInterface
+import ua.retrogaming.gcac.data.analytics.AnalyticsClient
 import ua.retrogaming.gcac.core.image.PaletteMap
 import ua.retrogaming.gcac.core.image.Thresholds
 import ua.retrogaming.gcac.core.image.applyPocketPalette
@@ -17,7 +19,10 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.OutputStream
 
-class ImageSaver(private val context: Context) {
+class ImageSaver(
+    private val context: Context,
+    private val analytics: AnalyticsClient,
+) {
 
     fun scaleBitmap(source: android.graphics.Bitmap, scale: Int, smooth: Boolean = false)
         = if (scale == 1) source else source.scale(
@@ -102,7 +107,12 @@ class ImageSaver(private val context: Context) {
                     cleanupBitmaps(src, scaled, filtered)
                     uri.toString()
                 } catch (t: Throwable) {
-                    t.printStackTrace()
+                    Log.e(TAG, "Failed to save image to MediaStore", t)
+                    analytics.recordError("save_mediastore", t)
+                    // The row was inserted IS_PENDING; leaving it behind litters the
+                    // user's media store with permanently invisible entries.
+                    runCatching { resolver.delete(uri, null, null) }
+                    cleanupBitmaps(src, scaled, filtered)
                     null
                 }
             } else {
@@ -143,7 +153,10 @@ class ImageSaver(private val context: Context) {
                     cleanupBitmaps(src, scaled, filtered)
                     imageFile.absolutePath
                 } catch (t: Throwable) {
-                    t.printStackTrace()
+                    Log.e(TAG, "Failed to save image", t)
+                    analytics.recordError("save_legacy", t)
+                    runCatching { imageFile.delete() } // don't leave a truncated JPEG
+                    cleanupBitmaps(src, scaled, filtered)
                     null
                 }
             }
@@ -158,5 +171,9 @@ class ImageSaver(private val context: Context) {
         if (filtered !== scaled && filtered !== src) filtered.recycle()
         if (scaled !== src) scaled.recycle()
         src.recycle()
+    }
+
+    private companion object {
+        const val TAG = "ImageSaver"
     }
 }

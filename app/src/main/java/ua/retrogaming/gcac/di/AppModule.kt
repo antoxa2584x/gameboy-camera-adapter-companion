@@ -54,7 +54,7 @@ val appModule = module {
     }
 
     // Misc
-    single { ImageSaver(androidContext()) }
+    single { ImageSaver(androidContext(), get()) }
 
     // ViewModels
     viewModelOf(::MainViewModel)
