@@ -126,6 +126,28 @@ class MainActivity : ComponentActivity() {
         onPermissionResult = null
     }
 
+    private val requestNotificationLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) {
+        // Declining only means no announcements — nothing in the app depends on it.
+    }
+
+    /**
+     * Announcements are opt-in from API 33. Asked once per launch at most; the
+     * system stops showing the dialog itself after two dismissals, so there is no
+     * need to track that here.
+     */
+    private fun requestNotificationPermissionIfNeeded() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+
+        val granted = ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.POST_NOTIFICATIONS
+        ) == PackageManager.PERMISSION_GRANTED
+
+        if (!granted) requestNotificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+    }
+
     private fun updateLocale(languageCode: String) {
         val locale = Locale(languageCode)
         Locale.setDefault(locale)
@@ -145,6 +167,8 @@ class MainActivity : ComponentActivity() {
                 Color.Transparent.toArgb(),
             )
         )
+
+        requestNotificationPermissionIfNeeded()
 
         setContent {
             CameraAdapterCompanionTheme {

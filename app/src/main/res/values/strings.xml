@@ -15,6 +15,10 @@
     <string name="update_available">Update Available!</string>
     <string name="update_downloaded">The update has been downloaded. Restart the app to finish installing it.</string>
     <string name="update_restart">Restart</string>
+    <!-- Must match the channel created in PushNotifier and the manifest meta-data. -->
+    <string name="push_channel_id" translatable="false">announcements</string>
+    <string name="push_channel_name">Announcements</string>
+    <string name="push_channel_description">News about the app and adapter firmware</string>
     <string name="language_settings">Language</string>
     <string name="lang_en">English</string>
     <string name="lang_uk">Ukrainian</string>

@@ -4,6 +4,8 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="28" />
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Informational announcements over FCM; runtime-requested on API 33+. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <!-- The app is useless without USB host mode; let Play filter incompatible devices. -->
     <uses-feature
@@ -40,6 +42,28 @@
                 android:resource="@xml/device_filter" />
         </activity>
 
+        <service
+            android:name=".data.push.PushMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+        <!--
+          Used by FCM to render notification-type messages itself while the app is
+          backgrounded. Without these it falls back to the launcher icon and no
+          channel, which on API 26+ means the message is dropped.
+        -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_notification" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/notification_accent" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="@string/push_channel_id" />
     </application>
 
 </manifest>

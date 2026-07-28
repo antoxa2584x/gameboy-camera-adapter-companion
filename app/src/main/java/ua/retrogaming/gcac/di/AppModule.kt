@@ -10,6 +10,7 @@ import org.koin.dsl.module
 import ua.retrogaming.gcac.data.analytics.AnalyticsClient
 import ua.retrogaming.gcac.data.image.ImageSaver
 import ua.retrogaming.gcac.data.image.PhotoFileStore
+import ua.retrogaming.gcac.data.push.PushClient
 import ua.retrogaming.gcac.data.repository.DeviceRepository
 import ua.retrogaming.gcac.data.repository.PhotoRepository
 import ua.retrogaming.gcac.data.repository.UpdateRepository
@@ -27,6 +28,9 @@ val appModule = module {
 
     // Telemetry
     single { AnalyticsClient(androidContext()) }
+
+    // Push
+    single { PushClient(androidContext(), get()) }
 
     // Storage
     single { PhotoFileStore(androidContext()) }

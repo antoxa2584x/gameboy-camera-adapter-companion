@@ -9,12 +9,14 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
 import org.koin.core.logger.Level
+import ua.retrogaming.gcac.data.push.PushClient
 import ua.retrogaming.gcac.data.serial.services.DiscoveryService
 import ua.retrogaming.gcac.di.appModule
 
 class MainApplication : Application() {
 
     private val discoveryService: DiscoveryService by inject()
+    private val pushClient: PushClient by inject()
 
     override fun onCreate() {
         super.onCreate()
@@ -30,5 +32,6 @@ class MainApplication : Application() {
         }
 
         discoveryService.init()
+        pushClient.init()
     }
 }
