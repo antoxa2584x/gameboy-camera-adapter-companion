@@ -22,7 +22,7 @@ A modern Android companion application for the [RP2040-based GameBoy Camera Adap
     - High-quality JPEG export with custom EXIF metadata (Make, Model, Software, and applied Color Scheme).
     - Automatic integration with the Android Gallery/Camera Roll (DCIM/GBCamAdapter).
     - Support for both Scoped Storage (Android 10+) and legacy storage permissions.
-- **Update Notifications**: Checks GitHub releases for both app and adapter-firmware updates.
+- **Update Notifications**: Checks GitHub releases for adapter-firmware updates. App updates are delivered through Google Play's in-app update flow.
 - **Multi-language Support**: Available in **English** and **Ukrainian**.
 - **Retro Aesthetic**: Pixel-art UI inspired by the GameBoy era, featuring the "Press Start 2P" font.
 

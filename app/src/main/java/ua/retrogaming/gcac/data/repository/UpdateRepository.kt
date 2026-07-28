@@ -16,19 +16,20 @@ import java.net.HttpURLConnection
 import java.net.URL
 
 /**
- * Checks GitHub releases for adapter-firmware and companion-app updates.
- * Results are exposed as [StateFlow]s and persisted via [UpdateCheckData].
+ * Checks GitHub releases for adapter-firmware updates. Results are exposed as a
+ * [StateFlow] and persisted via [UpdateCheckData].
+ *
+ * This covers the *adapter hardware* only. Companion-app updates go through
+ * Google Play's in-app update API — see
+ * [ua.retrogaming.gcac.data.update.PlayUpdateController] — because a
+ * Play-distributed app may not update itself from any other source.
  */
 class UpdateRepository {
 
     data class FirmwareUpdate(val version: String, val releaseUrl: String)
-    data class AppUpdate(val version: String, val releaseUrl: String, val skipped: Boolean)
 
     private val _firmwareUpdate = MutableStateFlow(loadFirmwareUpdate())
     val firmwareUpdate: StateFlow<FirmwareUpdate?> = _firmwareUpdate.asStateFlow()
-
-    private val _appUpdate = MutableStateFlow(loadAppUpdate())
-    val appUpdate: StateFlow<AppUpdate?> = _appUpdate.asStateFlow()
 
     /** Compare the connected adapter's firmware [currentVersion] against the latest release. */
     suspend fun checkFirmwareUpdate(currentVersion: String) {
@@ -43,37 +44,8 @@ class UpdateRepository {
         }
     }
 
-    /** Compare the installed app [currentVersion] (versionName) against the latest release. */
-    suspend fun checkAppUpdate(currentVersion: String) {
-        if (currentVersion.isBlank()) return
-
-        val result = checkGitHubRelease(APP_REPO, currentVersion)
-        if (result.error != null) return // keep cached state on network errors
-
-        UpdateCheckData.bulk {
-            isAppUpdateAvailable = result.isUpdateAvailable &&
-                    result.latestVersion != null && result.releaseUrl != null
-            appLatestVersion = result.latestVersion ?: ""
-            appReleaseUrl = result.releaseUrl ?: ""
-        }
-        _appUpdate.value = loadAppUpdate()
-    }
-
-    /** Don't show the app-update dialog again until a newer version appears. */
-    fun skipAppUpdate() {
-        val update = _appUpdate.value ?: return
-        UpdateCheckData.appUpdateSkippedVersion = update.version
-        _appUpdate.value = update.copy(skipped = true)
-    }
-
     private fun loadFirmwareUpdate(): FirmwareUpdate? = with(UpdateCheckData) {
         if (isUpdateAvailable && releaseUrl.isNotEmpty()) FirmwareUpdate(latestVersion, releaseUrl) else null
-    }
-
-    private fun loadAppUpdate(): AppUpdate? = with(UpdateCheckData) {
-        if (isAppUpdateAvailable && appLatestVersion.isNotEmpty() && appReleaseUrl.isNotEmpty()) {
-            AppUpdate(appLatestVersion, appReleaseUrl, skipped = appLatestVersion == appUpdateSkippedVersion)
-        } else null
     }
 
     private suspend fun checkGitHubRelease(
@@ -122,6 +94,5 @@ class UpdateRepository {
 
     companion object {
         private const val FIRMWARE_REPO = "antoxa2584x/gameboy-camera-adapter"
-        private const val APP_REPO = "antoxa2584x/gameboy-camera-adapter-companion"
     }
 }

@@ -44,7 +44,6 @@ data class MainUiState(
     val isBusy: Boolean = false,
     val printState: PrintState = PrintState.Idle,
     val firmwareUpdate: UpdateRepository.FirmwareUpdate? = null,
-    val appUpdate: UpdateRepository.AppUpdate? = null,
 )
 
 sealed interface PrintState {
@@ -107,9 +106,8 @@ class MainViewModel(
         deviceState,
         galleryState,
         updateRepository.firmwareUpdate,
-        updateRepository.appUpdate,
         printState,
-    ) { device, gallery, firmwareUpdate, appUpdate, print ->
+    ) { device, gallery, firmwareUpdate, print ->
         MainUiState(
             connected = device.connected,
             firmwareVersion = device.firmwareVersion,
@@ -123,7 +121,6 @@ class MainViewModel(
             isBusy = gallery.isBusy,
             printState = print,
             firmwareUpdate = firmwareUpdate,
-            appUpdate = appUpdate,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), MainUiState())
 
@@ -270,8 +267,6 @@ class MainViewModel(
             }
         }
     }
-
-    fun skipAppUpdate() = updateRepository.skipAppUpdate()
 
     private fun emit(event: MainEvent) {
         viewModelScope.launch { _events.emit(event) }

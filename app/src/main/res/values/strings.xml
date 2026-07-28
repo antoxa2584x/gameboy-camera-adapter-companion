@@ -13,8 +13,8 @@
     <string name="min_adapter_version">min version 1.4.8</string>
     <string name="firmware_update_available">Firmware update\navailable: v%1$s</string>
     <string name="update_available">Update Available!</string>
-    <string name="new_version_available">A new version v%1$s is available.</string>
-    <string name="download_update">Download Update</string>
+    <string name="update_downloaded">The update has been downloaded. Restart the app to finish installing it.</string>
+    <string name="update_restart">Restart</string>
     <string name="language_settings">Language</string>
     <string name="lang_en">English</string>
     <string name="lang_uk">Ukrainian</string>

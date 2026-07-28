@@ -28,6 +28,7 @@ kpermissionsRx = "3.5.0"
 colorpickerCompose = "1.2.0"
 material3 = "1.4.0"
 colorpicker = "1.0.0"
+appUpdate = "2.1.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -70,6 +71,8 @@ kpermissions-rx3 = { group = "com.github.fondesa", name = "kpermissions-rx3", ve
 colorpicker-compose = { group = "com.github.skydoves", name = "colorpicker-compose", version.ref = "colorpickerCompose" }
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "material3" }
 colorpicker = { group = "io.mhssn", name = "colorpicker", version.ref = "colorpicker" }
+play-app-update = { group = "com.google.android.play", name = "app-update", version.ref = "appUpdate" }
+play-app-update-ktx = { group = "com.google.android.play", name = "app-update-ktx", version.ref = "appUpdate" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

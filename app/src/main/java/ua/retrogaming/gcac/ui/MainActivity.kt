@@ -79,6 +79,7 @@ import org.koin.androidx.viewmodel.ext.android.viewModel
 import ua.retrogaming.gcac.R
 import ua.retrogaming.gcac.data.prefs.DeviceData
 import ua.retrogaming.gcac.data.repository.UpdateRepository
+import ua.retrogaming.gcac.data.update.PlayUpdateController
 import ua.retrogaming.gcac.ui.theme.BackgroundColor
 import ua.retrogaming.gcac.ui.theme.CameraAdapterCompanionTheme
 import ua.retrogaming.gcac.ui.theme.DarkRed
@@ -94,6 +95,9 @@ import java.util.Locale
 class MainActivity : ComponentActivity() {
 
     private val viewModel: MainViewModel by viewModel()
+
+    /** Must stay a field initialiser — it registers an activity-result launcher. */
+    private val playUpdate = PlayUpdateController(this)
 
     private var onPermissionResult: ((Boolean) -> Unit)? = null
 
@@ -394,39 +398,33 @@ class MainActivity : ComponentActivity() {
 
             ProgressIndicator(state.isBusy)
 
-            AppUpdateDialog(state.appUpdate)
+            UpdateReadyDialog()
         }
     }
 
+    /**
+     * Play downloads updates in the background; the only thing left for us is to
+     * ask for the restart that applies one. Play itself owns the "update available"
+     * prompt, so there is no version-check dialog here.
+     */
     @Composable
-    fun AppUpdateDialog(appUpdate: UpdateRepository.AppUpdate?) {
+    private fun UpdateReadyDialog() {
+        val readyToInstall by playUpdate.readyToInstall.collectAsStateWithLifecycle()
         var dismissed by remember { mutableStateOf(false) }
 
-        if (appUpdate == null || appUpdate.skipped || dismissed) return
+        if (!readyToInstall || dismissed) return
 
         AlertDialog(
             onDismissRequest = { dismissed = true },
             title = { Text(stringResource(R.string.update_available), color = Color.White) },
-            text = {
-                Text(
-                    stringResource(R.string.new_version_available, appUpdate.version),
-                    color = Color.White
-                )
-            },
+            text = { Text(stringResource(R.string.update_downloaded), color = Color.White) },
             confirmButton = {
-                TextButton(onClick = {
-                    dismissed = true
-                    startActivity(Intent(Intent.ACTION_VIEW, appUpdate.releaseUrl.toUri()))
-                }) {
-                    Text(stringResource(R.string.download_update), color = Color.Yellow)
+                TextButton(onClick = { playUpdate.completeUpdate() }) {
+                    Text(stringResource(R.string.update_restart), color = Color.Yellow)
                 }
             },
             dismissButton = {
-                TextButton(onClick = {
-                    // Don't nag again for this version
-                    viewModel.skipAppUpdate()
-                    dismissed = true
-                }) {
+                TextButton(onClick = { dismissed = true }) {
                     Text(stringResource(R.string.cancel), color = Color.White)
                 }
             },
