@@ -21,6 +21,7 @@ import ua.retrogaming.gcac.R
 import ua.retrogaming.gcac.core.GbPrinterPacketBuilder
 import ua.retrogaming.gcac.core.Version
 import ua.retrogaming.gcac.core.image.PocketCameraPalettes
+import ua.retrogaming.gcac.data.analytics.AnalyticsClient
 import ua.retrogaming.gcac.data.image.ImageSaver
 import ua.retrogaming.gcac.data.repository.DeviceRepository
 import ua.retrogaming.gcac.data.repository.PhotoRepository
@@ -65,6 +66,7 @@ class MainViewModel(
     private val imageSaver: ImageSaver,
     private val printSerialClient: PrintSerialClient,
     private val ledSerialClient: LedSerialClient,
+    private val analytics: AnalyticsClient,
 ) : ViewModel() {
 
     private val printState = MutableStateFlow<PrintState>(PrintState.Idle)
@@ -152,6 +154,7 @@ class MainViewModel(
                     photoRepository.setCurrentPhoto(
                         photo.copy(path = resultPath, filter = photoRepository.colorScheme.value)
                     )
+                    analytics.photoSaved(photoRepository.colorScheme.value)
                     _events.emit(MainEvent.PhotoSaved)
                     _events.emit(MainEvent.Message(R.string.photo_saved))
                 } else {
@@ -225,6 +228,15 @@ class MainViewModel(
                 }.also { if (recycle) bitmap.recycle() }
             }
 
+            analytics.printFinished(
+                when (result) {
+                    is PrintSerialClient.PrintResult.Success -> "success"
+                    is PrintSerialClient.PrintResult.NotConnected -> "not_connected"
+                    is PrintSerialClient.PrintResult.PrinterDisconnected -> "printer_disconnected"
+                    is PrintSerialClient.PrintResult.Error -> "error"
+                }
+            )
+
             _events.emit(
                 MainEvent.Message(
                     when (result) {
@@ -248,7 +260,8 @@ class MainViewModel(
                 ledSerialClient.setLedColor(color, useRgb)
                 delay(1_000)
                 ledSerialClient.loadLedStatus()
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                analytics.recordError("set_led_color", e)
                 _events.emit(MainEvent.Message(R.string.connect_adapter))
             }
         }
@@ -261,8 +274,10 @@ class MainViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 ledSerialClient.setMobileMode(mode)
+                analytics.mobileModeChanged(mode.name)
                 _events.emit(MainEvent.Message(R.string.adapter_rebooting))
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                analytics.recordError("set_mobile_mode", e)
                 _events.emit(MainEvent.Message(R.string.connect_adapter))
             }
         }

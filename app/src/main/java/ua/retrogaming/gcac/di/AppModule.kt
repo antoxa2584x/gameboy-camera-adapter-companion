@@ -7,6 +7,7 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
+import ua.retrogaming.gcac.data.analytics.AnalyticsClient
 import ua.retrogaming.gcac.data.image.ImageSaver
 import ua.retrogaming.gcac.data.repository.DeviceRepository
 import ua.retrogaming.gcac.data.repository.PhotoRepository
@@ -22,6 +23,9 @@ val APPLICATION_SCOPE = named("applicationScope")
 val appModule = module {
     // App-lifetime scope for work that must outlive any single screen
     single(APPLICATION_SCOPE) { CoroutineScope(SupervisorJob() + Dispatchers.Default) }
+
+    // Telemetry
+    single { AnalyticsClient(androidContext()) }
 
     // Repositories
     single { DeviceRepository() }
