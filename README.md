@@ -1,5 +1,7 @@
 # GBCam Companion
 
+[![Get it on Google Play](https://img.shields.io/badge/Google%20Play-Download-414141?logo=googleplay&logoColor=white)](https://play.google.com/store/apps/details?id=ua.retrogaming.gcac)
+
 A modern Android companion application for the [RP2040-based GameBoy Camera Adapter](https://github.com/antoxa2584x/gameboy-camera-adapter) (my fork of the original project). This app allows you to preview, capture, and manage photos from your GameBoy Camera directly on your Android device via USB-Serial — and print photos (including any image from your phone) on a real GameBoy Printer.
 
 ## ✨ Key Features
@@ -44,9 +46,9 @@ To use this app, you need a compatible hardware adapter:
 
 ## 📦 Installation
 
-1. Download the latest APK from the [Releases](https://github.com/antoxa2584x/gameboy-camera-adapter-companion/releases/) page.
-2. Install the APK on your Android device (Minimum SDK: 24 / Android 7.0).
-3. Alternatively, you can clone this repository and build the project in **Android Studio (Ladybug or newer)**.
+1. Install from [Google Play](https://play.google.com/store/apps/details?id=ua.retrogaming.gcac) (recommended — includes automatic updates).
+2. Alternatively, download the latest APK from the [Releases](https://github.com/antoxa2584x/gameboy-camera-adapter-companion/releases/) page and install it on your Android device (Minimum SDK: 24 / Android 7.0).
+3. Or clone this repository and build the project in **Android Studio (Ladybug or newer)**.
 
 ### Building from source
 
